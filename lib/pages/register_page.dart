@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -28,7 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
             children: <Widget>[
               TextField(
                 controller: _nameController,
-                decoration: InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(labelText: 'Blader Name'),
               ),
               TextField(
                 controller: _emailController,
@@ -53,7 +54,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           .collection('users')
                           .doc(userCredential.user!.uid)
                           .set({
-                        'name': _nameController.text.trim(),
+                        'blader_name': _nameController.text.trim(),
                         'email': _emailController.text.trim(),
                       });
                       Navigator.pushReplacementNamed(context, '/home');
