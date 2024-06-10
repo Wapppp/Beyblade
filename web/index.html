@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Firebase Configuration -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <!-- Include other Firebase modules as needed -->
+  <script type="module">
+    const firebaseConfig = {
+      apiKey: "AIzaSyBLRd6X2X7mZ_lEHlGZzv0A_H9S6L1jqxA",
+      authDomain: "test123-7ff7e.firebaseapp.com",
+      projectId: "test123-7ff7e",
+      storageBucket: "test123-7ff7e.appspot.com",
+      messagingSenderId: "498981798184",
+      appId: "1:498981798184:web:3d567a05bd78108d5a901d",
+      measurementId: "G-XJHHBQTNC6" // Optional
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <!-- Other head elements -->
+</head>
+<body>
+  <!-- Your Flutter app will be injected here -->
+  <script src="flutter.js"></script>
+  <script src="flutter_service_worker.js"></script>
+  <script src="main.dart.js" type="application/javascript"></script>
+</body>
+</html>
