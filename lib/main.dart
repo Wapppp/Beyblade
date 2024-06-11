@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'pages/data/injection_container.dart';
+import 'pages/data/home_view_model.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/profile_page.dart';
-import 'pages/home_page.dart';
-// Import JoinClubPage and CreateClubPage
-import 'pages/join_club_page.dart';
-import 'pages/create_club_page.dart';
+import 'pages/home_page.dart'; // Import HomePage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,9 +45,6 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/profile': (context) => ProfilePage(),
-        // Add routes for the Join Club and Create Club pages
-        '/join_club': (context) => JoinClubPage(),
-        '/create_club': (context) => CreateClubPage(),
       },
     );
   }

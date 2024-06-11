@@ -1,73 +1,97 @@
 import 'package:flutter/material.dart';
+import 'data/injection_container.dart';
+import 'data/home_view_model.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
+    final navigationService = sl<NavigationService>();
+
     return Scaffold(
+      backgroundColor: Colors.grey[300],
       appBar: AppBar(
-        title: Text('Home'),
+        title: Text('BeybladeX'),
         actions: [
           IconButton(
             icon: Icon(Icons.login),
             onPressed: () {
-              Navigator.pushNamed(context, '/login');
+              navigationService.navigateTo('/login');
             },
           ),
           IconButton(
             icon: Icon(Icons.app_registration),
             onPressed: () {
-              Navigator.pushNamed(context, '/register');
+              navigationService.navigateTo('/register');
             },
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                'Welcome to the Beyblade Community!',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/profile');
-                },
-                child: Text('Go to Profile'),
-              ),
-            ],
-          ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start, // Align text at the top
+          crossAxisAlignment:
+              CrossAxisAlignment.stretch, // Stretch text to full width
+          children: <Widget>[
+            Text(
+              'Welcome to the Beyblade Community!',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20), // Add space between text and button
+          ],
         ),
       ),
-      bottomNavigationBar: MediaQuery.of(context).size.width < 600
-          ? BottomNavigationBar(
-              items: [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: 'Home',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.event),
-                  label: 'Tournaments',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.leaderboard),
-                  label: 'Rankings',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.shop),
-                  label: 'Shop',
-                ),
-              ],
-              onTap: (index) {
-                // Handle navigation
-              },
-            )
-          : null,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex.clamp(0, 3),
+        items: [
+          _buildBottomNavigationBarItem(Icons.home, 'Home'),
+          _buildBottomNavigationBarItem(Icons.event, 'Tournaments'),
+          _buildBottomNavigationBarItem(Icons.leaderboard, 'Rankings'),
+          _buildBottomNavigationBarItem(Icons.group, 'Club'),
+        ],
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+          _handleNavigation(index);
+        },
+        selectedItemColor: Colors.purple,
+        unselectedItemColor: Colors.grey[600],
+        type: BottomNavigationBarType.fixed,
+      ),
     );
+  }
+
+  BottomNavigationBarItem _buildBottomNavigationBarItem(
+      IconData icon, String label) {
+    return BottomNavigationBarItem(
+      icon: Icon(icon),
+      label: label,
+    );
+  }
+
+  void _handleNavigation(int index) {
+    switch (index) {
+      case 0:
+        // Handle navigation to home page
+        break;
+      case 1:
+        // Handle navigation to tournaments page
+        break;
+      case 2:
+        // Handle navigation to rankings page
+        break;
+      case 3:
+        // Handle navigation to club page
+        break;
+    }
   }
 }
