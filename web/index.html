@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <!-- Firebase Configuration -->
+  <meta name="google-signin-client_id" content="498981798184-nqkh3l0bjl9emcqbomf9ad287pfch4j7.apps.googleusercontent.com">
+  <!-- Firese Configuration -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- Include other Firebase modules as needed -->
   <script type="module">
     const firebaseConfig = {
@@ -13,15 +16,30 @@
       storageBucket: "test123-7ff7e.appspot.com",
       messagingSenderId: "498981798184",
       appId: "1:498981798184:web:3d567a05bd78108d5a901d",
-      measurementId: "G-XJHHBQTNC6" // Optional
+      measurementId: "G-XJHHBQTNC6"
     };
     firebase.initializeApp(firebaseConfig);
-  </script>
 
-  <!-- Other head elements -->
+    function handleCredentialResponse(response) {
+      console.log("Encoded JWT ID token: " + response.credential);
+      window.dispatchEvent(new CustomEvent('google-sign-in', { detail: response.credential }));
+    }
+
+    window.onload = function () {
+      google.accounts.id.initialize({
+        client_id: "498981798184-nqkh3l0bjl9emcqbomf9ad287pfch4j7.apps.googleusercontent.com",
+        callback: handleCredentialResponse
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("sign-in-button"),
+        { theme: "outline", size: "large" }  // customization attributes
+      );
+    }
+  </script>
 </head>
 <body>
-  <!-- Your Flutter app will be injected here -->
+  <div id="sign-in-button"></div>
+  <script src="google_sign_in.js"></script>
   <script src="flutter.js"></script>
   <script src="flutter_service_worker.js"></script>
   <script src="main.dart.js" type="application/javascript"></script>
