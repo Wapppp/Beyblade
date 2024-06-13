@@ -9,6 +9,10 @@ import 'pages/register_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/home_page.dart'; // Import HomePage
 import 'package:firebase_auth/firebase_auth.dart';
+import 'pages/join_club_page.dart';
+import 'pages/create_club_page.dart';
+import 'pages/club_detail_page.dart';
+
 import 'dart:js' as js;
 
 void main() async {
@@ -52,8 +56,11 @@ class MyApp extends StatelessWidget {
           '/login': (context) => LoginPage(),
           '/register': (context) => RegisterPage(),
           '/profile': (context) => ProfilePage(),
+          '/join_club': (context) => JoinClubPage(),
+          '/create_club': (context) => CreateClubPage(),
         },
-        navigatorKey: sl<NavigationService>().navigatorKey, // Set navigatorKey here
+        navigatorKey:
+            sl<NavigationService>().navigatorKey, // Set navigatorKey here
       ),
     );
   }

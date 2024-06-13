@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:beyblade/pages/club_detail_page.dart'; // Adjust the import as per your project structure
 
 class JoinClubPage extends StatelessWidget {
   @override
@@ -31,23 +31,29 @@ class JoinClubPage extends StatelessWidget {
               var clubData = clubs[index].data() as Map<String, dynamic>;
               return ListTile(
                 title: Text(clubData['name']),
-                subtitle: Text('Leader: ${clubData['leader']}'),
-                trailing: ElevatedButton(
-                  onPressed: () async {
-                    User? user = FirebaseAuth.instance.currentUser;
-                    if (user != null) {
-                      await FirebaseFirestore.instance
-                          .collection('clubs')
-                          .doc(clubs[index].id)
-                          .update({
-                        'members': FieldValue.arrayUnion([user.uid]),
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Joined ${clubData['name']}')),
-                      );
+                subtitle: FutureBuilder<String>(
+                  future: _fetchBladerName(clubData['leader']),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Text('Loading...');
                     }
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return Text('Leader: Unknown');
+                    }
+                    return Text('Leader: ${snapshot.data}');
                   },
-                  child: Text('Join'),
+                ),
+                trailing: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ClubDetailPage(clubData: clubData),
+                      ),
+                    );
+                  },
+                  child: Text('View'),
                 ),
               );
             },
@@ -55,5 +61,14 @@ class JoinClubPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<String> _fetchBladerName(String uid) async {
+    DocumentSnapshot<Map<String, dynamic>> userSnapshot =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    return userSnapshot.exists
+        ? userSnapshot.data()!['blader_name'] ?? 'Unknown'
+        : 'Unknown';
   }
 }

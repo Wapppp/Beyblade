@@ -179,6 +179,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 10),
+
+                // Display clubs joined or a message if none
                 if (_clubs.isNotEmpty)
                   ..._clubs.map((club) => Card(
                         margin: EdgeInsets.symmetric(vertical: 10),
@@ -189,6 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       )),
                 if (_clubs.isEmpty) Text('No clubs joined yet.'),
+
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
