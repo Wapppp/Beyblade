@@ -41,8 +41,8 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _storeUserDataInFirestore(User user) async {
     try {
       await _firestore.collection('users').doc(user.uid).set({
-        'displayName': user.displayName ?? '',
-        'email': user.email ?? '',
+        'blader_name': _nameController.text.trim(), // Store blader_name instead of displayName
+        'email': _emailController.text.trim(),
         'photoUrl': user.photoURL ?? '',
       });
     } catch (e) {
@@ -107,9 +107,6 @@ class _RegisterPageState extends State<RegisterPage> {
             ElevatedButton(
               onPressed: _signInWithGoogle,
               child: Text('Sign in with Google'),
-            ),
-            Container(
-              key: Key('sign-in-button'),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:flutter/material.dart'; // Ensure material.dart is imported
+import 'injection_container.dart';
 
 final sl = GetIt.instance;
 
@@ -10,6 +11,7 @@ class NavigationService {
     if (navigatorKey.currentState != null) {
       return navigatorKey.currentState!.pushNamed(routeName);
     } else {
+      // Handle the case where currentState is null
       print('Error: Navigator currentState is null');
       return null;
     }
@@ -19,9 +21,6 @@ class NavigationService {
     if (navigatorKey.currentState != null) {
       navigatorKey.currentState!.pop();
     }
+    // Optionally, you can handle the case where currentState is null
   }
-}
-
-void setupLocator() {
-  sl.registerLazySingleton(() => NavigationService());
 }
