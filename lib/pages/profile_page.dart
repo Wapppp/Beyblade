@@ -1,11 +1,10 @@
 import 'dart:html' as html;
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'login_page.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -21,12 +20,11 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactNoController = TextEditingController();
   final TextEditingController _bladerNameController = TextEditingController();
+  final TextEditingController _nationalityController = TextEditingController();
 
   bool isEditMode = false;
   String? _imageUrl;
   List<Map<String, dynamic>> _clubs = [];
-
-  final picker = html.FileUploadInputElement();
 
   @override
   void initState() {
@@ -47,8 +45,26 @@ class _ProfilePageState extends State<ProfilePage> {
         .where('members', arrayContains: user.uid)
         .get();
 
-    List<Map<String, dynamic>> clubs =
-        clubsSnapshot.docs.map((doc) => doc.data()).toList();
+    List<Map<String, dynamic>> clubs = [];
+
+    for (var doc in clubsSnapshot.docs) {
+      Map<String, dynamic> clubData = doc.data();
+      // Fetch the blader name of the leader
+      if (clubData['leader'] != null) {
+        DocumentSnapshot<Map<String, dynamic>> leaderSnapshot =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(clubData['leader'])
+                .get();
+        if (leaderSnapshot.exists) {
+          clubData['leaderBladerName'] =
+              leaderSnapshot.data()?['blader_name'] ?? 'Unknown';
+        } else {
+          clubData['leaderBladerName'] = 'Unknown';
+        }
+      }
+      clubs.add(clubData);
+    }
 
     setState(() {
       _clubs = clubs;
@@ -89,6 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   'contact_no': _contactNoController.text,
                   'blader_name': _bladerNameController.text,
                   'profile_picture': _imageUrl,
+                  'nationality': _nationalityController.text,
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Profile updated successfully')),
@@ -126,6 +143,7 @@ class _ProfilePageState extends State<ProfilePage> {
             _contactNoController.text = userData['contact_no'] ?? '';
             _bladerNameController.text = userData['blader_name'] ?? '';
             _imageUrl = userData['profile_picture'] ?? '';
+            _nationalityController.text = userData['nationality'] ?? '';
           }
 
           return SingleChildScrollView(
@@ -140,7 +158,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       radius: 50,
                       backgroundImage: _imageUrl != null
                           ? NetworkImage(_imageUrl!)
-                          : AssetImage('assets/default_profile.jpg'),
+                          : AssetImage('assets/default_profile.jpg')
+                              as ImageProvider,
                     ),
                     isEditMode
                         ? Positioned(
@@ -157,6 +176,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 SizedBox(height: 20),
+                buildProfileField('Blader Name', _bladerNameController,
+                    isEditMode, userData['blader_name']),
                 buildProfileField('First Name', _firstNameController,
                     isEditMode, userData['first_name']),
                 buildProfileField('Middle Name (Optional)',
@@ -171,27 +192,23 @@ class _ProfilePageState extends State<ProfilePage> {
                     'Email', _emailController, isEditMode, userData['email']),
                 buildProfileField('Contact No.', _contactNoController,
                     isEditMode, userData['contact_no']),
-                buildProfileField('Blader Name', _bladerNameController,
-                    isEditMode, userData['blader_name']),
+                buildNationalityField(),
                 SizedBox(height: 20),
                 Text(
                   'Clubs Joined',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 10),
-
-                // Display clubs joined or a message if none
                 if (_clubs.isNotEmpty)
                   ..._clubs.map((club) => Card(
                         margin: EdgeInsets.symmetric(vertical: 10),
                         child: ListTile(
                           title: Text(club['name'] ?? 'Unknown Club'),
-                          subtitle:
-                              Text('Leader: ${club['leader'] ?? 'Unknown'}'),
+                          subtitle: Text(
+                              'Leader: ${club['leaderBladerName'] ?? 'Unknown'}'),
                         ),
                       )),
                 if (_clubs.isEmpty) Text('No clubs joined yet.'),
-
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
@@ -245,16 +262,20 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 readOnly: true,
                 onTap: () async {
-                  html.InputElement dateInput = html.InputElement()
-                    ..type = 'date'
-                    ..value = controller.text;
-                  dateInput.click();
-                  dateInput.onChange.listen((e) {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: controller.text.isNotEmpty
+                        ? DateTime.parse(controller.text)
+                        : DateTime.now(),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (pickedDate != null) {
                     setState(() {
-                      controller.text = DateFormat('yyyy-MM-dd')
-                          .format(dateInput.valueAsDate!);
+                      controller.text =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
                     });
-                  });
+                  }
                 },
               )
             : Text(value ?? ''),
@@ -262,8 +283,59 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget buildNationalityField() {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: ListTile(
+        title: Text('Nationality'),
+        subtitle: isEditMode
+            ? Row(
+                children: [
+                  CountryCodePicker(
+                    onChanged: (country) {
+                      _nationalityController.text = country.code!;
+                    },
+                    initialSelection: 'US', // Initial selection
+                    showCountryOnly: true,
+                    alignLeft: false,
+                    textStyle: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _nationalityController,
+                      decoration: InputDecoration(
+                        hintText: 'Select Nationality',
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Image.asset(
+                    'packages/country_code_picker/flags/${_nationalityController.text.toLowerCase()}.png',
+                    width: 25,
+                    height: 25,
+                    errorBuilder: (BuildContext context, Object exception,
+                        StackTrace? stackTrace) {
+                      return Text('Flag not found');
+                    },
+                  ),
+                  SizedBox(width: 10),
+                  Text(_nationalityController.text),
+                ],
+              ),
+      ),
+    );
+  }
+
   void _pickImage() {
-    picker.accept = 'image/*';
+    html.FileUploadInputElement picker = html.FileUploadInputElement()
+      ..accept = 'image/*';
     picker.click();
     picker.onChange.listen((e) {
       if (picker.files!.isNotEmpty) {
@@ -288,6 +360,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController.dispose();
     _contactNoController.dispose();
     _bladerNameController.dispose();
+    _nationalityController.dispose(); // Dispose the nationality controller
     super.dispose();
   }
 }

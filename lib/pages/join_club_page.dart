@@ -1,10 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:beyblade/pages/club_detail_page.dart'; // Adjust the import as per your project structure
+import 'package:beyblade/pages/login_page.dart'; // Import your login page
 
 class JoinClubPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<User?>(
+      future: FirebaseAuth.instance.authStateChanges().first,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Join a Club'),
+            ),
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (snapshot.hasData && snapshot.data != null) {
+          // User is authenticated, show the join club page
+          return _buildJoinClubPage(context, snapshot.data!);
+        } else {
+          // User is not authenticated, redirect to login page
+          return LoginPage();
+        }
+      },
+    );
+  }
+
+  Widget _buildJoinClubPage(BuildContext context, User user) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Join a Club'),
@@ -29,6 +57,9 @@ class JoinClubPage extends StatelessWidget {
             itemCount: clubs.length,
             itemBuilder: (context, index) {
               var clubData = clubs[index].data() as Map<String, dynamic>;
+              bool isMember =
+                  (clubData['members'] as List<dynamic>).contains(user.uid);
+
               return ListTile(
                 title: Text(clubData['name']),
                 subtitle: FutureBuilder<String>(
@@ -45,15 +76,21 @@ class JoinClubPage extends StatelessWidget {
                 ),
                 trailing: ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ClubDetailPage(clubData: clubData),
-                      ),
-                    );
+                    if (isMember) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ClubDetailPage(
+                            clubData: clubData,
+                            userId: user.uid,
+                          ),
+                        ),
+                      );
+                    } else {
+                      _joinClub(user.uid, clubs[index].id);
+                    }
                   },
-                  child: Text('View'),
+                  child: Text(isMember ? 'View' : 'Join'),
                 ),
               );
             },
@@ -70,5 +107,11 @@ class JoinClubPage extends StatelessWidget {
     return userSnapshot.exists
         ? userSnapshot.data()!['blader_name'] ?? 'Unknown'
         : 'Unknown';
+  }
+
+  Future<void> _joinClub(String userId, String clubId) async {
+    await FirebaseFirestore.instance.collection('clubs').doc(clubId).update({
+      'members': FieldValue.arrayUnion([userId])
+    });
   }
 }

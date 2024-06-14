@@ -23,10 +23,14 @@ class _HomePageState extends State<HomePage> {
   void _loadCurrentUser() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       setState(() {
         _user = user;
-        _bladerName = userData.get('blader_name') ?? user.displayName ?? 'Guest';
+        _bladerName =
+            userData.get('blader_name') ?? user.displayName ?? 'Guest';
       });
     }
   }
@@ -93,7 +97,8 @@ class _HomePageState extends State<HomePage> {
               sl<NavigationService>().navigateTo('/profile');
             }
           },
-          items: <String>['Hello, $_bladerName', 'My Profile', 'Logout'].map<DropdownMenuItem<String>>((String value) {
+          items: <String>['Hello, $_bladerName', 'My Profile', 'Logout']
+              .map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Text(value),
@@ -122,7 +127,8 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  BottomNavigationBarItem _buildBottomNavigationBarItem(IconData icon, String label) {
+  BottomNavigationBarItem _buildBottomNavigationBarItem(
+      IconData icon, String label) {
     return BottomNavigationBarItem(
       icon: Icon(icon),
       label: label,
@@ -135,10 +141,12 @@ class _HomePageState extends State<HomePage> {
         sl<NavigationService>().navigateTo('/home'); // Navigate to Home page
         break;
       case 1:
-        sl<NavigationService>().navigateTo('/tournaments'); // Navigate to Tournaments page
+        sl<NavigationService>()
+            .navigateTo('/tournaments'); // Navigate to Tournaments page
         break;
       case 2:
-        sl<NavigationService>().navigateTo('/rankings'); // Navigate to Rankings page
+        sl<NavigationService>()
+            .navigateTo('/rankings'); // Navigate to Rankings page
         break;
       case 3:
         sl<NavigationService>().navigateTo('/club'); // Navigate to Club page
