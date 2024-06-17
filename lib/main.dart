@@ -15,6 +15,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'pages/join_club_page.dart';
 import 'pages/create_club_page.dart';
 import 'pages/club_detail_page.dart';
+import 'pages/admin_page.dart';
+import 'pages/admin_login_page.dart';
 
 import 'dart:js' as js;
 import 'pages/data/injection_container.dart'; // Import sl from here
@@ -64,7 +66,9 @@ class MyApp extends StatelessWidget {
           '/join_club': (context) => JoinClubPage(),
           '/create_club': (context) => CreateClubPage(),
           '/rankings': (context) => RankingsPage(),
-          '/tournaments': (context) => TournamentsPage()
+          '/tournaments': (context) => TournamentsPage(),
+          '/admin': (context) => AdminPage(),
+          '/admin_login': (context) => AdminLoginPage(),
         },
         navigatorKey:
             sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt
