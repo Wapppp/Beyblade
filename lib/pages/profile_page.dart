@@ -1,6 +1,4 @@
-import 'dart:html' as html;
-import 'dart:typed_data';
-
+import 'dart:html' as html; // Import html for file picker functionality
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -31,7 +29,31 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    _fetchUserData();
     _fetchUserClubs();
+  }
+
+  Future<void> _fetchUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return;
+    }
+
+    // Fetch user data including profile picture URL
+    DocumentSnapshot<Map<String, dynamic>> userData =
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+
+    setState(() {
+      _imageUrl = userData.get('profile_picture');
+      _firstNameController.text = userData.get('first_name') ?? '';
+      _middleNameController.text = userData.get('middle_name') ?? '';
+      _lastNameController.text = userData.get('last_name') ?? '';
+      _ageController.text = userData.get('age') ?? '';
+      _birthdateController.text = userData.get('birthdate') ?? '';
+      _emailController.text = userData.get('email') ?? '';
+      _contactNoController.text = userData.get('contact_no') ?? '';
+      _bladerNameController.text = userData.get('blader_name') ?? '';
+    });
   }
 
   Future<void> _fetchUserClubs() async {
@@ -61,12 +83,6 @@ class _ProfilePageState extends State<ProfilePage> {
     if (user == null) {
       return LoginPage();
     }
-
-    Stream<DocumentSnapshot<Map<String, dynamic>>> userDataStream =
-        FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .snapshots();
 
     return Scaffold(
       appBar: AppBar(
@@ -101,117 +117,80 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: userDataStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.data() == null) {
-            return Center(child: Text('No data available'));
-          }
-
-          Map<String, dynamic> userData = snapshot.data!.data()!;
-
-          if (!isEditMode) {
-            _firstNameController.text = userData['first_name'] ?? '';
-            _middleNameController.text = userData['middle_name'] ?? '';
-            _lastNameController.text = userData['last_name'] ?? '';
-            _ageController.text = userData['age'] ?? '';
-            _birthdateController.text = userData['birthdate'] ?? '';
-            _emailController.text = userData['email'] ?? '';
-            _contactNoController.text = userData['contact_no'] ?? '';
-            _bladerNameController.text = userData['blader_name'] ?? '';
-            _imageUrl = userData['profile_picture'] ?? '';
-          }
-
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(20),
-            child: Column(
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            Stack(
+              alignment: Alignment.center,
               children: [
-                SizedBox(height: 20),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: _imageUrl != null
-                          ? NetworkImage(_imageUrl!)
-                          : AssetImage('assets/default_profile.jpg'),
-                    ),
-                    isEditMode
-                        ? Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: IconButton(
-                              icon: Icon(Icons.camera_alt),
-                              onPressed: () {
-                                _pickImage();
-                              },
-                            ),
-                          )
-                        : SizedBox(),
-                  ],
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: _imageUrl != null
+                      ? NetworkImage(_imageUrl!)
+                      : AssetImage('assets/default_profile.jpg'),
                 ),
-                SizedBox(height: 20),
-                buildProfileField('First Name', _firstNameController,
-                    isEditMode, userData['first_name']),
-                buildProfileField('Middle Name (Optional)',
-                    _middleNameController, isEditMode, userData['middle_name']),
-                buildProfileField('Last Name', _lastNameController, isEditMode,
-                    userData['last_name']),
-                buildProfileField(
-                    'Age', _ageController, isEditMode, userData['age']),
-                buildDateField('Birthdate', _birthdateController, isEditMode,
-                    userData['birthdate']),
-                buildProfileField(
-                    'Email', _emailController, isEditMode, userData['email']),
-                buildProfileField('Contact No.', _contactNoController,
-                    isEditMode, userData['contact_no']),
-                buildProfileField('Blader Name', _bladerNameController,
-                    isEditMode, userData['blader_name']),
-                SizedBox(height: 20),
-                Text(
-                  'Clubs Joined',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 10),
-                if (_clubs.isNotEmpty)
-                  ..._clubs.map((club) => Card(
-                        margin: EdgeInsets.symmetric(vertical: 10),
-                        child: ListTile(
-                          title: Text(club['name'] ?? 'Unknown Club'),
-                          subtitle:
-                              Text('Leader: ${club['leader'] ?? 'Unknown'}'),
+                isEditMode
+                    ? Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: IconButton(
+                          icon: Icon(Icons.camera_alt),
+                          onPressed: () {
+                            _pickImage();
+                          },
                         ),
-                      )),
-                if (_clubs.isEmpty) Text('No clubs joined yet.'),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/join_club');
-                  },
-                  child: Text('Join a Club'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/create_club');
-                  },
-                  child: Text('Create a Club'),
-                ),
+                      )
+                    : SizedBox(),
               ],
             ),
-          );
-        },
+            SizedBox(height: 20),
+            buildProfileField('First Name', _firstNameController, isEditMode),
+            buildProfileField(
+                'Middle Name (Optional)', _middleNameController, isEditMode),
+            buildProfileField('Last Name', _lastNameController, isEditMode),
+            buildProfileField('Age', _ageController, isEditMode),
+            buildDateField('Birthdate', _birthdateController, isEditMode),
+            buildProfileField('Email', _emailController, isEditMode),
+            buildProfileField('Contact No.', _contactNoController, isEditMode),
+            buildProfileField('Blader Name', _bladerNameController, isEditMode),
+            SizedBox(height: 20),
+            Text(
+              'Clubs Joined',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            if (_clubs.isNotEmpty)
+              ..._clubs.map((club) => Card(
+                    margin: EdgeInsets.symmetric(vertical: 10),
+                    child: ListTile(
+                      title: Text(club['name'] ?? 'Unknown Club'),
+                      subtitle: Text('Leader: ${club['leader'] ?? 'Unknown'}'),
+                    ),
+                  )),
+            if (_clubs.isEmpty) Text('No clubs joined yet.'),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/join_club');
+              },
+              child: Text('Join a Club'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/create_club');
+              },
+              child: Text('Create a Club'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget buildProfileField(String label, TextEditingController controller,
-      bool isEditMode, String? value) {
+      bool isEditMode) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10),
       child: ListTile(
@@ -223,13 +202,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   hintText: 'Enter $label',
                 ),
               )
-            : Text(value ?? ''),
+            : Text(controller.text),
       ),
     );
   }
 
   Widget buildDateField(String label, TextEditingController controller,
-      bool isEditMode, String? value) {
+      bool isEditMode) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10),
       child: ListTile(
@@ -254,7 +233,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   });
                 },
               )
-            : Text(value ?? ''),
+            : Text(controller.text),
       ),
     );
   }

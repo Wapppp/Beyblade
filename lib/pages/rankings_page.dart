@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:beyblade/pages/data/injection_container.dart'; // Import sl and NavigationService
+import 'data/navigation_service.dart';
 
 class RankingsPage extends StatelessWidget {
   @override

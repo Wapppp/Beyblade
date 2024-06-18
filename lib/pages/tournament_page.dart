@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:beyblade/pages/data/injection_container.dart'; // Import sl and NavigationService
+import 'package:beyblade/pages/data/injection_container.dart';
+import 'data/navigation_service.dart';
 
 class TournamentsPage extends StatelessWidget {
   @override
