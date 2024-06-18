@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'organizer_page.dart';
+import 'organizer_login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -64,7 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => OrganizerPage()),
+                    MaterialPageRoute(builder: (context) => OrganizerLoginPage()),
                   );
                 },
                 child: Container(

@@ -1,3 +1,5 @@
+
+import 'package:beyblade/pages/organizer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +16,10 @@ import 'pages/rankings_page.dart';
 import 'pages/tournament_page.dart';
 import 'pages/join_club_page.dart';
 import 'pages/club_detail_page.dart';
-import 'pages/tournaments_page.dart'; // Import TournamentsPage
+import 'pages/admin_login_page.dart';
+import 'pages/admin_page.dart';
+import 'pages/organizer_page.dart';
+import 'pages/organizer_login_page.dart';
 
 // Import your local dependencies
 import 'pages/data/injection_container.dart'; // Import sl from here
@@ -68,7 +73,11 @@ class MyApp extends StatelessWidget {
           '/club': (context) => JoinClubPage(),
           '/create_club': (context) => CreateClubPage(),
           '/rankings': (context) => RankingsPage(),
-          '/tournaments': (context) => TournamentsPage(), // Add the route for TournamentsPage
+          '/tournaments': (context) => TournamentsPage(),
+          '/admin': (context) => AdminLoginPage(),
+          '/admin_page': (context) => AdminPage(),
+          '/organizer': (context) => OrganizerPage(),
+          '/organizer_login': (context) => OrganizerLoginPage(),
         },
         navigatorKey: sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt
       ),

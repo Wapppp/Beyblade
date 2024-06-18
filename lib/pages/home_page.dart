@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,7 +13,6 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   User? _user;
   String _bladerName = '';
-  String? _profilePictureUrl;
 
   @override
   void initState() {
@@ -31,13 +29,7 @@ class _HomePageState extends State<HomePage> {
           .get();
       setState(() {
         _user = user;
-<<<<<<< HEAD
         _bladerName = userData.get('blader_name') ?? user.displayName ?? 'Guest';
-        _profilePictureUrl = userData.get('profile_picture');
-=======
-        _bladerName =
-            userData.get('blader_name') ?? user.displayName ?? 'Guest';
->>>>>>> b4abce09f5e7ece45b855d13f2a3991f4dc2f351
       });
     }
   }
@@ -45,19 +37,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFB8C1EC), // Updated background color to #B8C1EC
+      backgroundColor: Color(0xFFB8C1EC),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Container(
             padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-            color: Color(0xFFB8C1EC), // Top bar background color updated
+            color: Color(0xFFB8C1EC),
             child: Row(
               children: [
                 Image.asset(
-                  'assets/hehe.png', // Replace with your logo image asset path
-                  width: 170, // Adjust width as needed
-                  // You can adjust height, fit, etc. as per your design requirements
+                  'assets/hehe.png',
+                  width: 170,
                 ),
                 Spacer(),
                 _buildUserDropdown(),
@@ -66,32 +57,33 @@ class _HomePageState extends State<HomePage> {
           ),
           Expanded(
             child: Container(
-              color: Color(0xFF232946), // Main content area background
+              color: Color(0xFF232946),
               padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     'Welcome to the Beyblade Community!',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white, // Text color set to white
-                      fontFamily: 'Montserrat', // Example of using a modern font
+                      color: Colors.white,
+                      fontFamily: 'Montserrat',
                     ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 20),
-                  // Add your main content here
+                  // Add your main content widgets here
                 ],
               ),
             ),
           ),
           Container(
-            color: Color(0xFFB8C1EC), // Bottom navigation background color updated
+            color: Color(0xFFB8C1EC),
             padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
             child: BottomNavigationBar(
               currentIndex: _selectedIndex.clamp(0, 3),
-              backgroundColor: Color(0xFFB8C1EC), // Background color for BottomNavigationBar
+              backgroundColor: Color(0xFFB8C1EC),
               items: [
                 _buildBottomNavigationBarItem(Icons.home, 'Home'),
                 _buildBottomNavigationBarItem(Icons.event, 'Tournaments'),
@@ -116,42 +108,6 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildUserDropdown() {
     if (_user != null) {
-<<<<<<< HEAD
-      return Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundImage: _profilePictureUrl != null
-                ? NetworkImage(_profilePictureUrl!)
-                : AssetImage('assets/default_avatar.png'),
-            child: _profilePictureUrl == null ? Icon(Icons.person, size: 32) : null,
-          ),
-          SizedBox(width: 8),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: 'Hello, $_bladerName',
-              icon: Icon(Icons.arrow_drop_down),
-              onChanged: (String? newValue) {
-                if (newValue == 'Logout') {
-                  _signOut();
-                } else if (newValue == 'My Profile') {
-                  sl<NavigationService>().navigateTo('/profile');
-                }
-              },
-              items: <String>['Hello, $_bladerName', 'My Profile', 'Logout']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(
-                    value,
-                    style: TextStyle(color: Colors.white), // Button text color
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-=======
       return DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: 'Hello, $_bladerName',
@@ -171,7 +127,6 @@ class _HomePageState extends State<HomePage> {
             );
           }).toList(),
         ),
->>>>>>> b4abce09f5e7ece45b855d13f2a3991f4dc2f351
       );
     } else {
       return Row(
@@ -180,13 +135,10 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               sl<NavigationService>().navigateTo('/login');
             },
-            style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF232946)), // Background color
-              foregroundColor: MaterialStateProperty.all<Color>(Colors.white), // Text color
-              shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20), // Rounded corners
-                ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF232946), // Background color
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
             child: Text('Login'),
@@ -196,13 +148,10 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               sl<NavigationService>().navigateTo('/register');
             },
-            style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF232946)), // Background color
-              foregroundColor: MaterialStateProperty.all<Color>(Colors.white), // Text color
-              shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20), // Rounded corners
-                ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF232946), // Background color
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
             child: Text('Sign Up'),
@@ -226,19 +175,10 @@ class _HomePageState extends State<HomePage> {
         sl<NavigationService>().navigatorKey.currentState!.pushNamed('/home');
         break;
       case 1:
-<<<<<<< HEAD
-        sl<NavigationService>().navigatorKey.currentState!.pushNamed('/tournaments');
+        sl<NavigationService>().navigateTo('/tournaments');
         break;
       case 2:
-        sl<NavigationService>().navigatorKey.currentState!.pushNamed('/rankings');
-=======
-        sl<NavigationService>()
-            .navigateTo('/tournaments'); // Navigate to Tournaments page
-        break;
-      case 2:
-        sl<NavigationService>()
-            .navigateTo('/rankings'); // Navigate to Rankings page
->>>>>>> b4abce09f5e7ece45b855d13f2a3991f4dc2f351
+        sl<NavigationService>().navigateTo('/rankings');
         break;
       case 3:
         sl<NavigationService>().navigatorKey.currentState!.pushNamed('/club');
