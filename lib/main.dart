@@ -1,25 +1,29 @@
-import 'package:beyblade/pages/create_club_page.dart';
-import 'package:beyblade/pages/rankings_page.dart';
-import 'package:beyblade/pages/tournament_page.dart';
+import 'package:beyblade/pages/organizer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'pages/data/injection_container.dart';
-import 'pages/data/home_view_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:js' as js;
+
+// Import your pages
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/profile_page.dart';
-import 'pages/home_page.dart'; // Import HomePage
-import 'package:firebase_auth/firebase_auth.dart';
-import 'pages/join_club_page.dart';
+import 'pages/home_page.dart';
 import 'pages/create_club_page.dart';
+import 'pages/rankings_page.dart';
+import 'pages/tournament_page.dart';
+import 'pages/join_club_page.dart';
 import 'pages/club_detail_page.dart';
-import 'pages/admin_page.dart';
 import 'pages/admin_login_page.dart';
+import 'pages/admin_page.dart';
+import 'pages/organizer_page.dart';
+import 'pages/organizer_login_page.dart';
 
-import 'dart:js' as js;
+// Import your local dependencies
 import 'pages/data/injection_container.dart'; // Import sl from here
+import 'pages/data/navigation_service.dart';
+import 'pages/data/home_view_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,11 +68,14 @@ class MyApp extends StatelessWidget {
           '/register': (context) => RegisterPage(),
           '/profile': (context) => ProfilePage(),
           '/join_club': (context) => JoinClubPage(),
+          '/club': (context) => JoinClubPage(),
           '/create_club': (context) => CreateClubPage(),
           '/rankings': (context) => RankingsPage(),
           '/tournaments': (context) => TournamentsPage(),
-          '/admin': (context) => AdminPage(),
-          '/admin_login': (context) => AdminLoginPage(),
+          '/admin': (context) => AdminLoginPage(),
+          '/admin_page': (context) => AdminPage(),
+          '/organizer': (context) => OrganizerPage(),
+          '/organizer_login': (context) => OrganizerLoginPage(),
         },
         navigatorKey:
             sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt

@@ -1,3 +1,4 @@
+
 name: beyblade
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
@@ -36,12 +37,18 @@ dependencies:
   firebase_core: ^3.0.0
   firebase_auth: ^5.0.0
   cloud_firestore: ^5.0.0
-  firebase_storage: ^12.0.0
+  firebase_storage: ^12.0.1
   firebase_messaging: ^15.0.0
   google_sign_in: ^6.2.1
   google_sign_in_web_redirect: ^0.0.1
   google_sign_in_web: ^0.12.0
   intl: ^0.19.0
+  http: ^0.13.4
+  country_flags: ^3.0.0
+  country_code_picker: ^3.0.0
+  flutter_svg: ^2.0.9
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -59,10 +66,17 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
 
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
+  assets:
+      - assets/hehe.png
+      - assets/google.png
+
+
   # the material Icons class.
   uses-material-design: true
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
