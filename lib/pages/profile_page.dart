@@ -1,9 +1,10 @@
-import 'dart:html' as html; // Import html for file picker functionality
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'login_page.dart';
+import 'package:country_code_picker/country_code_picker.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -19,41 +20,16 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactNoController = TextEditingController();
   final TextEditingController _bladerNameController = TextEditingController();
+  final TextEditingController _nationalityController = TextEditingController();
 
   bool isEditMode = false;
   String? _imageUrl;
   List<Map<String, dynamic>> _clubs = [];
 
-  final picker = html.FileUploadInputElement();
-
   @override
   void initState() {
     super.initState();
-    _fetchUserData();
     _fetchUserClubs();
-  }
-
-  Future<void> _fetchUserData() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return;
-    }
-
-    // Fetch user data including profile picture URL
-    DocumentSnapshot<Map<String, dynamic>> userData =
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-
-    setState(() {
-      _imageUrl = userData.get('profile_picture');
-      _firstNameController.text = userData.get('first_name') ?? '';
-      _middleNameController.text = userData.get('middle_name') ?? '';
-      _lastNameController.text = userData.get('last_name') ?? '';
-      _ageController.text = userData.get('age') ?? '';
-      _birthdateController.text = userData.get('birthdate') ?? '';
-      _emailController.text = userData.get('email') ?? '';
-      _contactNoController.text = userData.get('contact_no') ?? '';
-      _bladerNameController.text = userData.get('blader_name') ?? '';
-    });
   }
 
   Future<void> _fetchUserClubs() async {
@@ -69,8 +45,26 @@ class _ProfilePageState extends State<ProfilePage> {
         .where('members', arrayContains: user.uid)
         .get();
 
-    List<Map<String, dynamic>> clubs =
-        clubsSnapshot.docs.map((doc) => doc.data()).toList();
+    List<Map<String, dynamic>> clubs = [];
+
+    for (var doc in clubsSnapshot.docs) {
+      Map<String, dynamic> clubData = doc.data();
+      // Fetch the blader name of the leader
+      if (clubData['leader'] != null) {
+        DocumentSnapshot<Map<String, dynamic>> leaderSnapshot =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(clubData['leader'])
+                .get();
+        if (leaderSnapshot.exists) {
+          clubData['leaderBladerName'] =
+              leaderSnapshot.data()?['blader_name'] ?? 'Unknown';
+        } else {
+          clubData['leaderBladerName'] = 'Unknown';
+        }
+      }
+      clubs.add(clubData);
+    }
 
     setState(() {
       _clubs = clubs;
@@ -83,6 +77,12 @@ class _ProfilePageState extends State<ProfilePage> {
     if (user == null) {
       return LoginPage();
     }
+
+    Stream<DocumentSnapshot<Map<String, dynamic>>> userDataStream =
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .snapshots();
 
     return Scaffold(
       appBar: AppBar(
@@ -105,6 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   'contact_no': _contactNoController.text,
                   'blader_name': _bladerNameController.text,
                   'profile_picture': _imageUrl,
+                  'nationality': _nationalityController.text,
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Profile updated successfully')),
@@ -117,80 +118,120 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          children: [
-            SizedBox(height: 20),
-            Stack(
-              alignment: Alignment.center,
+      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: userDataStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || snapshot.data!.data() == null) {
+            return Center(child: Text('No data available'));
+          }
+
+          Map<String, dynamic> userData = snapshot.data!.data()!;
+
+          if (!isEditMode) {
+            _firstNameController.text = userData['first_name'] ?? '';
+            _middleNameController.text = userData['middle_name'] ?? '';
+            _lastNameController.text = userData['last_name'] ?? '';
+            _ageController.text = userData['age'] ?? '';
+            _birthdateController.text = userData['birthdate'] ?? '';
+            _emailController.text = userData['email'] ?? '';
+            _contactNoController.text = userData['contact_no'] ?? '';
+            _bladerNameController.text = userData['blader_name'] ?? '';
+            _imageUrl = userData['profile_picture'] ?? '';
+            _nationalityController.text = userData['nationality'] ?? '';
+          }
+
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(20),
+            child: Column(
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: _imageUrl != null
-                      ? NetworkImage(_imageUrl!)
-                      : AssetImage('assets/default_profile.jpg'),
+                SizedBox(height: 20),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: _imageUrl != null
+                          ? NetworkImage(_imageUrl!)
+                          : AssetImage('assets/default_profile.jpg')
+                              as ImageProvider,
+                    ),
+                    isEditMode
+                        ? Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: IconButton(
+                              icon: Icon(Icons.camera_alt),
+                              onPressed: () {
+                                _pickImage();
+                              },
+                            ),
+                          )
+                        : SizedBox(),
+                  ],
                 ),
-                isEditMode
-                    ? Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: IconButton(
-                          icon: Icon(Icons.camera_alt),
-                          onPressed: () {
-                            _pickImage();
-                          },
+                SizedBox(height: 20),
+                buildProfileField('Blader Name', _bladerNameController,
+                    isEditMode, userData['blader_name']),
+                buildProfileField('First Name', _firstNameController,
+                    isEditMode, userData['first_name']),
+                buildProfileField('Middle Name (Optional)',
+                    _middleNameController, isEditMode, userData['middle_name']),
+                buildProfileField('Last Name', _lastNameController, isEditMode,
+                    userData['last_name']),
+                buildProfileField(
+                    'Age', _ageController, isEditMode, userData['age']),
+                buildDateField('Birthdate', _birthdateController, isEditMode,
+                    userData['birthdate']),
+                buildProfileField(
+                    'Email', _emailController, isEditMode, userData['email']),
+                buildProfileField('Contact No.', _contactNoController,
+                    isEditMode, userData['contact_no']),
+                buildNationalityField(),
+                SizedBox(height: 20),
+                Text(
+                  'Clubs Joined',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                if (_clubs.isNotEmpty)
+                  ..._clubs.map((club) => Card(
+                        margin: EdgeInsets.symmetric(vertical: 10),
+                        child: ListTile(
+                          title: Text(club['name'] ?? 'Unknown Club'),
+                          subtitle: Text(
+                              'Leader: ${club['leaderBladerName'] ?? 'Unknown'}'),
                         ),
-                      )
-                    : SizedBox(),
+                      )),
+                if (_clubs.isEmpty) Text('No clubs joined yet.'),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/join_club');
+                  },
+                  child: Text('Join a Club'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/create_club');
+                  },
+                  child: Text('Create a Club'),
+                ),
               ],
             ),
-            SizedBox(height: 20),
-            buildProfileField('First Name', _firstNameController, isEditMode),
-            buildProfileField(
-                'Middle Name (Optional)', _middleNameController, isEditMode),
-            buildProfileField('Last Name', _lastNameController, isEditMode),
-            buildProfileField('Age', _ageController, isEditMode),
-            buildDateField('Birthdate', _birthdateController, isEditMode),
-            buildProfileField('Email', _emailController, isEditMode),
-            buildProfileField('Contact No.', _contactNoController, isEditMode),
-            buildProfileField('Blader Name', _bladerNameController, isEditMode),
-            SizedBox(height: 20),
-            Text(
-              'Clubs Joined',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            if (_clubs.isNotEmpty)
-              ..._clubs.map((club) => Card(
-                    margin: EdgeInsets.symmetric(vertical: 10),
-                    child: ListTile(
-                      title: Text(club['name'] ?? 'Unknown Club'),
-                      subtitle: Text('Leader: ${club['leader'] ?? 'Unknown'}'),
-                    ),
-                  )),
-            if (_clubs.isEmpty) Text('No clubs joined yet.'),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/join_club');
-              },
-              child: Text('Join a Club'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/create_club');
-              },
-              child: Text('Create a Club'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   Widget buildProfileField(String label, TextEditingController controller,
-      bool isEditMode) {
+      bool isEditMode, String? value) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10),
       child: ListTile(
@@ -202,13 +243,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   hintText: 'Enter $label',
                 ),
               )
-            : Text(controller.text),
+            : Text(value ?? ''),
       ),
     );
   }
 
   Widget buildDateField(String label, TextEditingController controller,
-      bool isEditMode) {
+      bool isEditMode, String? value) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10),
       child: ListTile(
@@ -221,25 +262,80 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 readOnly: true,
                 onTap: () async {
-                  html.InputElement dateInput = html.InputElement()
-                    ..type = 'date'
-                    ..value = controller.text;
-                  dateInput.click();
-                  dateInput.onChange.listen((e) {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: controller.text.isNotEmpty
+                        ? DateTime.parse(controller.text)
+                        : DateTime.now(),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (pickedDate != null) {
                     setState(() {
-                      controller.text = DateFormat('yyyy-MM-dd')
-                          .format(dateInput.valueAsDate!);
+                      controller.text =
+                          DateFormat('yyyy-MM-dd').format(pickedDate);
                     });
-                  });
+                  }
                 },
               )
-            : Text(controller.text),
+            : Text(value ?? ''),
+      ),
+    );
+  }
+
+  Widget buildNationalityField() {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: ListTile(
+        title: Text('Nationality'),
+        subtitle: isEditMode
+            ? Row(
+                children: [
+                  CountryCodePicker(
+                    onChanged: (country) {
+                      _nationalityController.text = country.code!;
+                    },
+                    initialSelection: 'US', // Initial selection
+                    showCountryOnly: true,
+                    alignLeft: false,
+                    textStyle: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _nationalityController,
+                      decoration: InputDecoration(
+                        hintText: 'Select Nationality',
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Image.asset(
+                    'packages/country_code_picker/flags/${_nationalityController.text.toLowerCase()}.png',
+                    width: 25,
+                    height: 25,
+                    errorBuilder: (BuildContext context, Object exception,
+                        StackTrace? stackTrace) {
+                      return Text('Flag not found');
+                    },
+                  ),
+                  SizedBox(width: 10),
+                  Text(_nationalityController.text),
+                ],
+              ),
       ),
     );
   }
 
   void _pickImage() {
-    picker.accept = 'image/*';
+    html.FileUploadInputElement picker = html.FileUploadInputElement()
+      ..accept = 'image/*';
     picker.click();
     picker.onChange.listen((e) {
       if (picker.files!.isNotEmpty) {
@@ -264,6 +360,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController.dispose();
     _contactNoController.dispose();
     _bladerNameController.dispose();
+    _nationalityController.dispose(); // Dispose the nationality controller
     super.dispose();
   }
 }

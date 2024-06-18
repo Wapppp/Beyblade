@@ -25,11 +25,19 @@ class _HomePageState extends State<HomePage> {
   void _loadCurrentUser() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       setState(() {
         _user = user;
+<<<<<<< HEAD
         _bladerName = userData.get('blader_name') ?? user.displayName ?? 'Guest';
         _profilePictureUrl = userData.get('profile_picture');
+=======
+        _bladerName =
+            userData.get('blader_name') ?? user.displayName ?? 'Guest';
+>>>>>>> b4abce09f5e7ece45b855d13f2a3991f4dc2f351
       });
     }
   }
@@ -108,6 +116,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildUserDropdown() {
     if (_user != null) {
+<<<<<<< HEAD
       return Row(
         children: [
           CircleAvatar(
@@ -142,6 +151,27 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+=======
+      return DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: 'Hello, $_bladerName',
+          icon: Icon(Icons.arrow_drop_down),
+          onChanged: (String? newValue) {
+            if (newValue == 'Logout') {
+              _signOut();
+            } else if (newValue == 'My Profile') {
+              sl<NavigationService>().navigateTo('/profile');
+            }
+          },
+          items: <String>['Hello, $_bladerName', 'My Profile', 'Logout']
+              .map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        ),
+>>>>>>> b4abce09f5e7ece45b855d13f2a3991f4dc2f351
       );
     } else {
       return Row(
@@ -196,10 +226,19 @@ class _HomePageState extends State<HomePage> {
         sl<NavigationService>().navigatorKey.currentState!.pushNamed('/home');
         break;
       case 1:
+<<<<<<< HEAD
         sl<NavigationService>().navigatorKey.currentState!.pushNamed('/tournaments');
         break;
       case 2:
         sl<NavigationService>().navigatorKey.currentState!.pushNamed('/rankings');
+=======
+        sl<NavigationService>()
+            .navigateTo('/tournaments'); // Navigate to Tournaments page
+        break;
+      case 2:
+        sl<NavigationService>()
+            .navigateTo('/rankings'); // Navigate to Rankings page
+>>>>>>> b4abce09f5e7ece45b855d13f2a3991f4dc2f351
         break;
       case 3:
         sl<NavigationService>().navigatorKey.currentState!.pushNamed('/club');
