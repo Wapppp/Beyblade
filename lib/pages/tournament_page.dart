@@ -24,113 +24,56 @@ class TournamentsPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Tournaments'),
       ),
-<<<<<<< HEAD
-      body: StreamBuilder<QuerySnapshot>(
-        stream:
-            FirebaseFirestore.instance.collection('tournaments').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(
-              child: Text(
-                'No tournaments available',
-                style: TextStyle(color: Colors.grey),
-              ),
-            );
-          }
-
-          final events = snapshot.data!.docs.map((doc) {
-            return TournamentEvent(
-              name: doc['name'],
-              date: doc['date'],
-              location: doc['location'],
-              description: doc['description'],
-            );
-          }).toList();
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: events.length,
-            itemBuilder: (context, index) {
-              final event = events[index];
-              return Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                margin: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        event.name,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Date: ${event.date}',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      Text(
-                        'Location: ${event.location}',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        event.description,
-                        style: TextStyle(fontSize: 14),
-                      ),
-                      SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Replace with your join logic
-                            sl<NavigationService>()
-                                .navigateTo('/join_tournament');
-                          },
-                          child: Text('Join now'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-=======
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'Tournaments Page',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                sl<NavigationService>().navigateTo(
-                    '/profile'); // Example navigation using NavigationService
-              },
-              child: Text('Go to Profile'),
-            ),
-          ],
-        ),
->>>>>>> e05f89175013079da06c6d93b90f782689a0e6b1
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _buildTournamentsList(),
       ),
     );
   }
+
+  Widget _buildTournamentsList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('tournaments').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(
+            child: Text(
+              'No tournaments available',
+              style: TextStyle(fontSize: 18),
+            ),
+          );
+        }
+
+        final tournaments = snapshot.data!.docs.map((doc) {
+          return TournamentEvent(
+            name: doc['name'],
+            date: doc['date'],
+            location: doc['location'],
+            description: doc['description'],
+          );
+        }).toList();
+
+        return ListView.builder(
+          itemCount: tournaments.length,
+          itemBuilder: (context, index) {
+            final tournament = tournaments[index];
+            return ListTile(
+              title: Text(tournament.name),
+              subtitle: Text(tournament.date),
+              onTap: () {
+                // Handle tapping on a tournament, e.g., navigate to details
+                print('Tournament ${tournament.name} tapped');
+              },
+            );
+          },
+        );
+      },
+    );
+  }
 }
-<<<<<<< HEAD
 
 void main() {
   runApp(MyApp());
@@ -148,5 +91,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-=======
->>>>>>> e05f89175013079da06c6d93b90f782689a0e6b1
