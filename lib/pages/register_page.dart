@@ -20,13 +20,15 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser != null) {
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken!,
           idToken: googleAuth.idToken!,
         );
 
-        final UserCredential userCredential = await _auth.signInWithCredential(credential);
+        final UserCredential userCredential =
+            await _auth.signInWithCredential(credential);
         final User? user = userCredential.user;
 
         if (user != null) {
@@ -64,7 +66,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => OrganizerLoginPage()),
+                    MaterialPageRoute(
+                        builder: (context) => OrganizerLoginPage()),
                   );
                 },
                 child: Container(
@@ -134,7 +137,7 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Text('Register'),
             ),
             SizedBox(height: 20.0),
-           ElevatedButton(
+            ElevatedButton(
               onPressed: _signInWithGoogle,
               child: Row(
                 mainAxisSize: MainAxisSize.min,

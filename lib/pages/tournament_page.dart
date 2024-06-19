@@ -24,6 +24,7 @@ class TournamentsPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Tournaments'),
       ),
+<<<<<<< HEAD
       body: StreamBuilder<QuerySnapshot>(
         stream:
             FirebaseFirestore.instance.collection('tournaments').snapshots(),
@@ -105,10 +106,31 @@ class TournamentsPage extends StatelessWidget {
             },
           );
         },
+=======
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'Tournaments Page',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                sl<NavigationService>().navigateTo(
+                    '/profile'); // Example navigation using NavigationService
+              },
+              child: Text('Go to Profile'),
+            ),
+          ],
+        ),
+>>>>>>> e05f89175013079da06c6d93b90f782689a0e6b1
       ),
     );
   }
 }
+<<<<<<< HEAD
 
 void main() {
   runApp(MyApp());
@@ -126,3 +148,5 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+=======
+>>>>>>> e05f89175013079da06c6d93b90f782689a0e6b1

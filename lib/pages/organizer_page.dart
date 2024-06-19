@@ -106,6 +106,7 @@ class _OrganizerPageState extends State<OrganizerPage> {
                 ),
                 SizedBox(height: 20),
                 Expanded(
+<<<<<<< HEAD
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('tournaments')
@@ -175,6 +176,37 @@ class _OrganizerPageState extends State<OrganizerPage> {
                             .toList(),
                       );
                     },
+=======
+                  child: DataTable(
+                    columns: [
+                      DataColumn(
+                          label: Text('Name',
+                              style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Date',
+                              style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Location',
+                              style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Description',
+                              style: TextStyle(fontWeight: FontWeight.bold))),
+                    ],
+                    rows: events
+                        .map((event) => DataRow(
+                              cells: [
+                                DataCell(Text(event.name,
+                                    style: TextStyle(color: Colors.white))),
+                                DataCell(Text(event.date,
+                                    style: TextStyle(color: Colors.white))),
+                                DataCell(Text(event.location,
+                                    style: TextStyle(color: Colors.white))),
+                                DataCell(Text(event.description,
+                                    style: TextStyle(color: Colors.white))),
+                              ],
+                            ))
+                        .toList(),
+>>>>>>> e05f89175013079da06c6d93b90f782689a0e6b1
                   ),
                 ),
               ],

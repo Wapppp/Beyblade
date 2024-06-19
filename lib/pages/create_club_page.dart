@@ -32,6 +32,8 @@ class CreateClubPage extends StatelessWidget {
                       'name': clubName,
                       'leader': user.uid,
                       'members': [user.uid],
+                      'vice_captain':
+                          null, // Set vice_captain to null by default
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Club created successfully')),

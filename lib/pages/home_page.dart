@@ -55,9 +55,17 @@ class _HomePageState extends State<HomePage> {
       }
     } else {
       setState(() {
+<<<<<<< HEAD
         _user = null;
         _bladerName = 'Guest';
         _profilePictureUrl = '';
+=======
+        _user = user;
+        _bladerName =
+            userData.get('blader_name') ?? user.displayName ?? 'Guest';
+        _bladerName =
+            userData.get('blader_name') ?? user.displayName ?? 'Guest';
+>>>>>>> e05f89175013079da06c6d93b90f782689a0e6b1
       });
     }
   }
