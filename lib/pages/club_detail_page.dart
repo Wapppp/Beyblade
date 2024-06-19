@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:beyblade/pages/manage_club_page.dart';
+import 'package:beyblade/pages/profile_detail_page.dart';
 
 class ClubDetailPage extends StatelessWidget {
   final DocumentSnapshot clubSnapshot;
@@ -27,13 +28,49 @@ class ClubDetailPage extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
-            Text(
-              'Leader: ${clubData['leader_name'] ?? 'Unknown'}',
-              style: TextStyle(fontSize: 18),
+            FutureBuilder<DocumentSnapshot>(
+              future: _fetchMemberData(clubData['leader']),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Text('Leader: Loading...');
+                } else if (snapshot.hasError ||
+                    !snapshot.hasData ||
+                    !snapshot.data!.exists) {
+                  return Text('Leader: Unknown');
+                } else {
+                  var leaderData =
+                      snapshot.data!.data() as Map<String, dynamic>;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ProfileDetailPage(uid: clubData['leader']),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage:
+                              NetworkImage(leaderData['profile_picture'] ?? ''),
+                          radius: 20,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Leader: ${leaderData['blader_name'] ?? 'Unknown'}',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
             ),
             SizedBox(height: 16),
             FutureBuilder<DocumentSnapshot>(
-              future: _fetchMemberData(clubData['vice_captain']),
+              future: _fetchMemberData(clubData['vice_captain_name']),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Text('Vice Captain: Loading...');
@@ -44,9 +81,30 @@ class ClubDetailPage extends StatelessWidget {
                 } else {
                   var viceCaptainData =
                       snapshot.data!.data() as Map<String, dynamic>;
-                  return Text(
-                    'Vice Captain: ${viceCaptainData['blader_name'] ?? 'None'}',
-                    style: TextStyle(fontSize: 18),
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProfileDetailPage(
+                              uid: clubData['vice_captain_name']),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(
+                              viceCaptainData['profile_picture'] ?? ''),
+                          radius: 20,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Vice Captain: ${viceCaptainData['blader_name'] ?? 'None'}',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ],
+                    ),
                   );
                 }
               },
@@ -110,8 +168,24 @@ class ClubDetailPage extends StatelessWidget {
           itemCount: memberDocs.length,
           itemBuilder: (context, index) {
             var memberData = memberDocs[index].data() as Map<String, dynamic>;
-            return ListTile(
-              title: Text(memberData['blader_name'] ?? 'Unknown'),
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ProfileDetailPage(uid: memberDocs[index].id),
+                  ),
+                );
+              },
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundImage:
+                      NetworkImage(memberData['profile_picture'] ?? ''),
+                  radius: 20,
+                ),
+                title: Text(memberData['blader_name'] ?? 'Unknown'),
+              ),
             );
           },
         );

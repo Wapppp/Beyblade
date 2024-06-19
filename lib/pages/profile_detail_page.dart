@@ -55,6 +55,13 @@ class ProfileDetailPage extends StatelessWidget {
                 buildProfileField('Email', userData['email']),
                 buildProfileField('Contact No.', userData['contact_no']),
                 buildNationalityField(userData['nationality']),
+                SizedBox(height: 20),
+                Text(
+                  'Clubs Joined',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                buildClubsList(uid),
               ],
             ),
           );
@@ -107,5 +114,69 @@ class ProfileDetailPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget buildClubsList(String userId) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchUserClubs(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Text('No clubs joined');
+        }
+
+        List<Map<String, dynamic>> clubs = snapshot.data!;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: clubs.map((club) {
+            return Card(
+              margin: EdgeInsets.symmetric(vertical: 10),
+              child: ListTile(
+                title: Text(club['name'] ?? 'Unknown Club'),
+                subtitle:
+                    Text('Leader: ${club['leaderBladerName'] ?? 'Unknown'}'),
+                onTap: () {
+                  // Navigate to the club details page or perform other actions
+                },
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchUserClubs(String userId) async {
+    QuerySnapshot<Map<String, dynamic>> clubsSnapshot = await FirebaseFirestore
+        .instance
+        .collection('clubs')
+        .where('members', arrayContains: userId)
+        .get();
+
+    List<Map<String, dynamic>> clubs = [];
+
+    for (var doc in clubsSnapshot.docs) {
+      Map<String, dynamic> clubData = doc.data();
+      if (clubData['leader'] != null) {
+        DocumentSnapshot<Map<String, dynamic>> leaderSnapshot =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(clubData['leader'])
+                .get();
+        if (leaderSnapshot.exists) {
+          clubData['leaderBladerName'] =
+              leaderSnapshot.data()?['blader_name'] ?? 'Unknown';
+        } else {
+          clubData['leaderBladerName'] = 'Unknown';
+        }
+      }
+      clubs.add(clubData);
+    }
+    return clubs;
   }
 }
