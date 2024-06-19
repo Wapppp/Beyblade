@@ -1,257 +1,185 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'profile_detail_page.dart'; // Import your profile detail page
+import 'package:beyblade/pages/manage_club_page.dart';
 
 class ClubDetailPage extends StatelessWidget {
-  final Map<String, dynamic> clubData;
+  final DocumentSnapshot clubSnapshot;
   final String userId;
 
-  ClubDetailPage({required this.clubData, required this.userId});
+  ClubDetailPage({required this.clubSnapshot, required this.userId});
 
   @override
   Widget build(BuildContext context) {
+    Map<String, dynamic> clubData = clubSnapshot.data() as Map<String, dynamic>;
     bool isLeader = clubData['leader'] == userId;
-    String? viceCaptainId = clubData['vice_captain'];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(clubData['name'] ?? 'Unknown Club'),
-        actions: isLeader
-            ? [
-                IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () => _deleteClub(context),
-                )
-              ]
-            : null,
+        title: Text(clubData['name'] ?? 'Club Detail'),
       ),
-      body: ListView(
-        children: [
-          ListTile(
-            title: Text('Leader'),
-            subtitle: FutureBuilder<String>(
-              future: _fetchBladerName(clubData['leader']),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Text('Loading...');
-                }
-                if (snapshot.hasError || !snapshot.hasData) {
-                  return Text('Unknown');
-                }
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProfileDetailPage(uid: clubData['leader']),
-                      ),
-                    );
-                  },
-                  child: Text(snapshot.data!,
-                      style: TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline)),
-                );
-              },
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              clubData['name'] ?? 'Club Name',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-          ),
-          ListTile(
-            title: Text('Vice-Captain'),
-            subtitle: FutureBuilder<String>(
-              future: _fetchBladerName(viceCaptainId),
+            SizedBox(height: 16),
+            Text(
+              'Leader: ${clubData['leader_name'] ?? 'Unknown'}',
+              style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(height: 16),
+            FutureBuilder<DocumentSnapshot>(
+              future: _fetchMemberData(clubData['vice_captain']),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Text('Loading...');
-                }
-                if (snapshot.hasError ||
+                  return Text('Vice Captain: Loading...');
+                } else if (snapshot.hasError ||
                     !snapshot.hasData ||
-                    viceCaptainId == null) {
-                  return Text('No vice-captain assigned');
+                    !snapshot.data!.exists) {
+                  return Text('Vice Captain: None');
+                } else {
+                  var viceCaptainData =
+                      snapshot.data!.data() as Map<String, dynamic>;
+                  return Text(
+                    'Vice Captain: ${viceCaptainData['blader_name'] ?? 'None'}',
+                    style: TextStyle(fontSize: 18),
+                  );
                 }
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProfileDetailPage(uid: viceCaptainId),
-                      ),
-                    );
-                  },
-                  child: Text(snapshot.data!,
-                      style: TextStyle(
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline)),
-                );
               },
             ),
-            trailing: isLeader
-                ? IconButton(
-                    icon: Icon(Icons.edit),
-                    onPressed: () => _assignViceCaptain(context),
-                  )
-                : null,
-          ),
-          ListTile(
-            title: Text('Members'),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: (clubData['members'] as List<dynamic>?)
-                      ?.map((memberId) => FutureBuilder<String>(
-                            future: _fetchBladerName(memberId),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return Text('Loading...');
-                              }
-                              if (snapshot.hasError || !snapshot.hasData) {
-                                return Text('Unknown');
-                              }
-                              return ListTile(
-                                title: GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            ProfileDetailPage(uid: memberId),
-                                      ),
-                                    );
-                                  },
-                                  child: Text(snapshot.data!,
-                                      style: TextStyle(
-                                          color: Colors.blue,
-                                          decoration:
-                                              TextDecoration.underline)),
-                                ),
-                                trailing: isLeader && memberId != userId
-                                    ? IconButton(
-                                        icon: Icon(Icons.remove_circle),
-                                        onPressed: () =>
-                                            _removeMember(memberId),
-                                      )
-                                    : null,
-                              );
-                            },
-                          ))
-                      .toList() ??
-                  [],
+            SizedBox(height: 16),
+            Text(
+              'Members:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          ),
-          if (!isLeader)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () => _leaveClub(context),
+            Expanded(
+              child: _buildMembersList(clubData['members'], clubData['leader']),
+            ),
+            SizedBox(height: 16),
+            if (!isLeader)
+              ElevatedButton(
+                onPressed: () {
+                  _leaveClub(context, userId, clubSnapshot.id);
+                  Navigator.pop(context);
+                },
                 child: Text('Leave Club'),
               ),
-            ),
-        ],
+            if (isLeader)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      _navigateToManageClubPage(context, clubSnapshot);
+                    },
+                    child: Text('Manage Club'),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Future<String> _fetchBladerName(String? uid) async {
-    if (uid == null) return 'No vice-captain assigned';
-    DocumentSnapshot<Map<String, dynamic>> userSnapshot =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+  Widget _buildMembersList(List<dynamic>? members, String? leaderId) {
+    if (members == null || leaderId == null) {
+      return Center(child: Text('No members found'));
+    }
 
-    return userSnapshot.exists
-        ? userSnapshot.data()!['blader_name'] ?? 'Unknown'
-        : 'Unknown';
-  }
+    List<String> filteredMembers = members
+        .where((memberId) => memberId != leaderId)
+        .map((e) => e.toString())
+        .toList();
 
-  void _removeMember(String memberId) {
-    FirebaseFirestore.instance.collection('clubs').doc(clubData['id']).update({
-      'members': FieldValue.arrayRemove([memberId])
-    });
-  }
-
-  void _deleteClub(BuildContext context) {
-    FirebaseFirestore.instance
-        .collection('clubs')
-        .doc(clubData['id'])
-        .delete()
-        .then((_) {
-      Navigator.pop(context);
-    });
-  }
-
-  void _assignViceCaptain(BuildContext context) async {
-    String? selectedMember;
-    await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Assign Vice-Captain'),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return DropdownButton<String>(
-                isExpanded: true,
-                value: selectedMember,
-                hint: Text('Select a member'),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedMember = newValue;
-                  });
-                },
-                items: (clubData['members'] as List<dynamic>)
-                    .map<DropdownMenuItem<String>>((memberId) {
-                  return DropdownMenuItem<String>(
-                    value: memberId,
-                    child: FutureBuilder<String>(
-                      future: _fetchBladerName(memberId),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Text('Loading...');
-                        }
-                        if (snapshot.hasError || !snapshot.hasData) {
-                          return Text('Unknown');
-                        }
-                        return Text(snapshot.data!);
-                      },
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Assign'),
-              onPressed: () {
-                if (selectedMember != null) {
-                  FirebaseFirestore.instance
-                      .collection('clubs')
-                      .doc(clubData['id'])
-                      .update({
-                    'vice_captain': selectedMember,
-                  }).then((_) {
-                    Navigator.of(context).pop();
-                  });
-                }
-              },
-            ),
-          ],
+    return FutureBuilder<List<DocumentSnapshot>>(
+      future: _fetchMembersData(filteredMembers),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No members found'));
+        }
+        List<DocumentSnapshot> memberDocs = snapshot.data!;
+        return ListView.builder(
+          itemCount: memberDocs.length,
+          itemBuilder: (context, index) {
+            var memberData = memberDocs[index].data() as Map<String, dynamic>;
+            return ListTile(
+              title: Text(memberData['blader_name'] ?? 'Unknown'),
+            );
+          },
         );
       },
     );
   }
 
-  void _leaveClub(BuildContext context) {
-    FirebaseFirestore.instance.collection('clubs').doc(clubData['id']).update({
-      'members': FieldValue.arrayRemove([userId])
-    }).then((_) {
-      Navigator.pop(context);
-    });
+  Future<List<DocumentSnapshot>> _fetchMembersData(
+      List<String> memberIds) async {
+    var memberFutures = memberIds.map(
+        (uid) => FirebaseFirestore.instance.collection('users').doc(uid).get());
+    return await Future.wait(memberFutures);
+  }
+
+  Future<DocumentSnapshot> _fetchMemberData(String? memberId) async {
+    if (memberId == null || memberId.isEmpty) {
+      // Return a dummy document with default values or handle it based on your app's logic
+      return FirebaseFirestore.instance.collection('users').doc('dummy').get();
+    }
+    try {
+      // Fetch the document snapshot corresponding to the memberId
+      return await FirebaseFirestore.instance
+          .collection('users')
+          .doc(memberId)
+          .get();
+    } catch (e) {
+      // Handle errors fetching the document, if necessary
+      print('Error fetching member data: $e');
+      throw e; // Rethrow the error or handle it gracefully based on your app's requirements
+    }
+  }
+
+  Future<void> _leaveClub(
+      BuildContext context, String userId, String clubId) async {
+    if (clubId.isEmpty) {
+      print('Club ID is invalid!');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to leave club: Invalid club ID')),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('clubs').doc(clubId).update({
+        'members': FieldValue.arrayRemove([userId])
+      });
+      if (ScaffoldMessenger.of(context).mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You left the club')),
+        );
+      }
+    } catch (e) {
+      print('Error leaving club: $e');
+      if (ScaffoldMessenger.of(context).mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to leave club: $e')),
+        );
+      }
+    }
+  }
+
+  void _navigateToManageClubPage(
+      BuildContext context, DocumentSnapshot clubSnapshot) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ManageClubPage(clubSnapshot: clubSnapshot),
+      ),
+    );
   }
 }

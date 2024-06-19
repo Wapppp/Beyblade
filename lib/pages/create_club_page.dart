@@ -26,15 +26,27 @@ class CreateClubPage extends StatelessWidget {
               onPressed: () async {
                 User? user = FirebaseAuth.instance.currentUser;
                 if (user != null) {
+                  await user.reload(); // Refresh user data after reload
+
                   String clubName = _clubNameController.text.trim();
                   if (clubName.isNotEmpty) {
-                    await FirebaseFirestore.instance.collection('clubs').add({
+                    String leaderName = await _fetchBladerName(user.uid);
+
+                    DocumentReference clubRef = await FirebaseFirestore.instance
+                        .collection('clubs')
+                        .add({
                       'name': clubName,
                       'leader': user.uid,
-                      'members': [user.uid],
-                      'vice_captain':
-                          null, // Set vice_captain to null by default
+                      'leader_name': leaderName,
+                      'vice_captain': null,
+                      'vice_captain_name': null,
+                      'members': [],
                     });
+
+                    await clubRef.update({
+                      'members': FieldValue.arrayUnion([user.uid]),
+                    });
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Club created successfully')),
                     );
@@ -51,5 +63,14 @@ class CreateClubPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<String> _fetchBladerName(String uid) async {
+    DocumentSnapshot<Map<String, dynamic>> userSnapshot =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    return userSnapshot.exists
+        ? userSnapshot.data()!['blader_name'] ?? 'Unknown'
+        : 'Unknown';
   }
 }

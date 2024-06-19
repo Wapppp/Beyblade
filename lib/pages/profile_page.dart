@@ -149,39 +149,15 @@ class _ProfilePageState extends State<ProfilePage> {
           return SingleChildScrollView(
             padding: EdgeInsets.all(20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: 20),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: _imageUrl != null
-                          ? NetworkImage(_imageUrl!)
-                          : AssetImage('assets/default_profile.jpg')
-                              as ImageProvider,
-                    ),
-                    isEditMode
-                        ? Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: IconButton(
-                              icon: Icon(Icons.camera_alt),
-                              onPressed: () {
-                                _pickImage();
-                              },
-                            ),
-                          )
-                        : SizedBox(),
-                  ],
-                ),
-                SizedBox(height: 20),
+                buildAvatar(),
                 buildProfileField('Blader Name', _bladerNameController,
                     isEditMode, userData['blader_name']),
                 buildProfileField('First Name', _firstNameController,
                     isEditMode, userData['first_name']),
-                buildProfileField('Middle Name (Optional)',
-                    _middleNameController, isEditMode, userData['middle_name']),
+                buildProfileField('Middle Name', _middleNameController,
+                    isEditMode, userData['middle_name']),
                 buildProfileField('Last Name', _lastNameController, isEditMode,
                     userData['last_name']),
                 buildProfileField(
@@ -200,27 +176,20 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 SizedBox(height: 10),
                 if (_clubs.isNotEmpty)
-                  ..._clubs.map((club) => Card(
-                        margin: EdgeInsets.symmetric(vertical: 10),
-                        child: ListTile(
-                          title: Text(club['name'] ?? 'Unknown Club'),
-                          subtitle: Text(
-                              'Leader: ${club['leaderBladerName'] ?? 'Unknown'}'),
-                        ),
-                      )),
+                  ..._clubs.map((club) => buildClubCard(club)),
                 if (_clubs.isEmpty) Text('No clubs joined yet.'),
                 SizedBox(height: 20),
-                ElevatedButton(
+                buildActionButton(
+                  text: 'Join a Club',
                   onPressed: () {
                     Navigator.pushNamed(context, '/join_club');
                   },
-                  child: Text('Join a Club'),
                 ),
-                ElevatedButton(
+                buildActionButton(
+                  text: 'Create a Club',
                   onPressed: () {
                     Navigator.pushNamed(context, '/create_club');
                   },
-                  child: Text('Create a Club'),
                 ),
               ],
             ),
@@ -230,20 +199,56 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget buildAvatar() {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        CircleAvatar(
+          radius: 50,
+          backgroundImage: _imageUrl != null
+              ? NetworkImage(_imageUrl!)
+              : AssetImage('assets/default_profile.jpg') as ImageProvider,
+        ),
+        if (isEditMode)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: IconButton(
+              icon: Icon(Icons.camera_alt),
+              onPressed: () {
+                _pickImage();
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget buildProfileField(String label, TextEditingController controller,
       bool isEditMode, String? value) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10),
-      child: ListTile(
-        title: Text(label),
-        subtitle: isEditMode
-            ? TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'Enter $label',
-                ),
-              )
-            : Text(value ?? ''),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            isEditMode
+                ? TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: 'Enter $label',
+                      border: OutlineInputBorder(),
+                    ),
+                  )
+                : Text(value ?? ''),
+          ],
+        ),
       ),
     );
   }
@@ -252,33 +257,44 @@ class _ProfilePageState extends State<ProfilePage> {
       bool isEditMode, String? value) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10),
-      child: ListTile(
-        title: Text(label),
-        subtitle: isEditMode
-            ? TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'Enter $label',
-                ),
-                readOnly: true,
-                onTap: () async {
-                  DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: controller.text.isNotEmpty
-                        ? DateTime.parse(controller.text)
-                        : DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                  );
-                  if (pickedDate != null) {
-                    setState(() {
-                      controller.text =
-                          DateFormat('yyyy-MM-dd').format(pickedDate);
-                    });
-                  }
-                },
-              )
-            : Text(value ?? ''),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            isEditMode
+                ? TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: 'Enter $label',
+                      border: OutlineInputBorder(),
+                    ),
+                    readOnly: true,
+                    onTap: () async {
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: controller.text.isNotEmpty
+                            ? DateTime.parse(controller.text)
+                            : DateTime.now(),
+                        firstDate: DateTime(1900),
+                        lastDate: DateTime.now(),
+                      );
+                      if (pickedDate != null) {
+                        setState(() {
+                          controller.text =
+                              DateFormat('yyyy-MM-dd').format(pickedDate);
+                        });
+                      }
+                    },
+                  )
+                : Text(value ?? ''),
+          ],
+        ),
       ),
     );
   }
@@ -286,49 +302,101 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget buildNationalityField() {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10),
-      child: ListTile(
-        title: Text('Nationality'),
-        subtitle: isEditMode
-            ? Row(
-                children: [
-                  CountryCodePicker(
-                    onChanged: (country) {
-                      _nationalityController.text = country.code!;
-                    },
-                    initialSelection: 'US', // Initial selection
-                    showCountryOnly: true,
-                    alignLeft: false,
-                    textStyle: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: TextField(
-                      controller: _nationalityController,
-                      decoration: InputDecoration(
-                        hintText: 'Select Nationality',
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Nationality',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            isEditMode
+                ? Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: CountryCodePicker(
+                          onChanged: (country) {
+                            _nationalityController.text = country.code!;
+                          },
+                          initialSelection: 'US',
+                          showCountryOnly: true,
+                          alignLeft: false,
+                          textStyle:
+                              TextStyle(fontSize: 16, color: Colors.black),
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        flex: 3,
+                        child: TextField(
+                          controller: _nationalityController,
+                          decoration: InputDecoration(
+                            hintText: 'Select Nationality',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Image.asset(
+                        'packages/country_code_picker/flags/${_nationalityController.text.toLowerCase()}.png',
+                        width: 30,
+                        height: 30,
+                        errorBuilder: (BuildContext context, Object exception,
+                            StackTrace? stackTrace) {
+                          return Text('Flag not found');
+                        },
+                      ),
+                      SizedBox(width: 10),
+                      Text(_nationalityController.text),
+                    ],
                   ),
-                ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildClubCard(Map<String, dynamic> club) {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      elevation: 5,
+      child: ListTile(
+        contentPadding: EdgeInsets.all(16),
+        title: Text(club['name'] ?? 'Unknown Club',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('Leader: ${club['leaderBladerName'] ?? 'Unknown'}'),
+        trailing: isEditMode
+            ? IconButton(
+                icon: Icon(Icons.remove_circle, color: Colors.red),
+                onPressed: () => _leaveClub(club['id']),
               )
-            : Row(
-                children: [
-                  Image.asset(
-                    'packages/country_code_picker/flags/${_nationalityController.text.toLowerCase()}.png',
-                    width: 25,
-                    height: 25,
-                    errorBuilder: (BuildContext context, Object exception,
-                        StackTrace? stackTrace) {
-                      return Text('Flag not found');
-                    },
-                  ),
-                  SizedBox(width: 10),
-                  Text(_nationalityController.text),
-                ],
-              ),
+            : null,
+        onTap: () {
+          // Navigate to the club details page or perform other actions
+        },
+      ),
+    );
+  }
+
+  Widget buildActionButton(
+      {required String text, required VoidCallback onPressed}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Text(text, style: TextStyle(fontSize: 16)),
       ),
     );
   }
@@ -350,6 +418,28 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  Future<void> _leaveClub(String clubId) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return;
+    }
+    try {
+      await FirebaseFirestore.instance.collection('clubs').doc(clubId).update({
+        'members': FieldValue.arrayRemove([user.uid]),
+      });
+      setState(() {
+        _clubs.removeWhere((club) => club['id'] == clubId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('You have left the club')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to leave club: $e')),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -360,7 +450,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController.dispose();
     _contactNoController.dispose();
     _bladerNameController.dispose();
-    _nationalityController.dispose(); // Dispose the nationality controller
+    _nationalityController.dispose();
     super.dispose();
   }
 }

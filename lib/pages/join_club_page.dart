@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:beyblade/pages/club_detail_page.dart'; // Adjust the import as per your project structure
-import 'package:beyblade/pages/login_page.dart'; // Import your login page
+import 'package:beyblade/pages/club_detail_page.dart';
+import 'package:beyblade/pages/login_page.dart';
 
 class JoinClubPage extends StatelessWidget {
   @override
@@ -22,10 +22,8 @@ class JoinClubPage extends StatelessWidget {
         }
 
         if (snapshot.hasData && snapshot.data != null) {
-          // User is authenticated, show the join club page
           return _buildJoinClubPage(context, snapshot.data!);
         } else {
-          // User is not authenticated, redirect to login page
           return LoginPage();
         }
       },
@@ -56,24 +54,29 @@ class JoinClubPage extends StatelessWidget {
           return ListView.builder(
             itemCount: clubs.length,
             itemBuilder: (context, index) {
-              var clubData = clubs[index].data() as Map<String, dynamic>;
-              bool isMember =
-                  (clubData['members'] as List<dynamic>).contains(user.uid);
+              var clubSnapshot = clubs[index];
+              var clubData = clubSnapshot.data() as Map<String, dynamic>;
+              String clubId = clubSnapshot.id;
+              List<dynamic> members = clubData['members'] ?? [];
+              bool isMember = members.contains(user.uid);
 
               return ListTile(
-                title: Text(clubData['name']),
-                subtitle: FutureBuilder<String>(
-                  future: _fetchBladerName(clubData['leader']),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Text('Loading...');
-                    }
-                    if (snapshot.hasError || !snapshot.hasData) {
-                      return Text('Leader: Unknown');
-                    }
-                    return Text('Leader: ${snapshot.data}');
-                  },
-                ),
+                title: Text(clubData['name'] ?? 'Club Name Missing'),
+                subtitle:
+                    Text('Leader: ${clubData['leader_name'] ?? 'Unknown'}'),
+                onTap: isMember
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ClubDetailPage(
+                              clubSnapshot: clubSnapshot,
+                              userId: user.uid,
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
                 trailing: ElevatedButton(
                   onPressed: () {
                     if (isMember) {
@@ -81,13 +84,13 @@ class JoinClubPage extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ClubDetailPage(
-                            clubData: clubData,
+                            clubSnapshot: clubSnapshot,
                             userId: user.uid,
                           ),
                         ),
                       );
                     } else {
-                      _joinClub(user.uid, clubs[index].id);
+                      _joinClub(context, user.uid, clubId);
                     }
                   },
                   child: Text(isMember ? 'View' : 'Join'),
@@ -100,18 +103,13 @@ class JoinClubPage extends StatelessWidget {
     );
   }
 
-  Future<String> _fetchBladerName(String uid) async {
-    DocumentSnapshot<Map<String, dynamic>> userSnapshot =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
-
-    return userSnapshot.exists
-        ? userSnapshot.data()!['blader_name'] ?? 'Unknown'
-        : 'Unknown';
-  }
-
-  Future<void> _joinClub(String userId, String clubId) async {
+  Future<void> _joinClub(
+      BuildContext context, String userId, String clubId) async {
     await FirebaseFirestore.instance.collection('clubs').doc(clubId).update({
       'members': FieldValue.arrayUnion([userId])
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Joined club successfully')),
+    );
   }
 }
