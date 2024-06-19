@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'profile_detail_page.dart'; // Import your profile detail page
 
 class ClubDetailPage extends StatelessWidget {
   final Map<String, dynamic> clubData;
@@ -11,10 +12,11 @@ class ClubDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isLeader = clubData['leader'] == userId;
+    String? viceCaptainId = clubData['vice_captain'];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(clubData['name']),
+        title: Text(clubData['name'] ?? 'Unknown Club'),
         actions: isLeader
             ? [
                 IconButton(
@@ -37,22 +39,52 @@ class ClubDetailPage extends StatelessWidget {
                 if (snapshot.hasError || !snapshot.hasData) {
                   return Text('Unknown');
                 }
-                return Text(snapshot.data!);
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ProfileDetailPage(uid: clubData['leader']),
+                      ),
+                    );
+                  },
+                  child: Text(snapshot.data!,
+                      style: TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline)),
+                );
               },
             ),
           ),
           ListTile(
             title: Text('Vice-Captain'),
             subtitle: FutureBuilder<String>(
-              future: _fetchBladerName(clubData['vice_captain']),
+              future: _fetchBladerName(viceCaptainId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Text('Loading...');
                 }
-                if (snapshot.hasError || !snapshot.hasData) {
+                if (snapshot.hasError ||
+                    !snapshot.hasData ||
+                    viceCaptainId == null) {
                   return Text('No vice-captain assigned');
                 }
-                return Text(snapshot.data!);
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ProfileDetailPage(uid: viceCaptainId),
+                      ),
+                    );
+                  },
+                  child: Text(snapshot.data!,
+                      style: TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline)),
+                );
               },
             ),
             trailing: isLeader
@@ -66,29 +98,46 @@ class ClubDetailPage extends StatelessWidget {
             title: Text('Members'),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: (clubData['members'] as List<dynamic>)
-                  .map((memberId) => FutureBuilder<String>(
-                        future: _fetchBladerName(memberId),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Text('Loading...');
-                          }
-                          if (snapshot.hasError || !snapshot.hasData) {
-                            return Text('Unknown');
-                          }
-                          return ListTile(
-                            title: Text(snapshot.data!),
-                            trailing: isLeader && memberId != userId
-                                ? IconButton(
-                                    icon: Icon(Icons.remove_circle),
-                                    onPressed: () => _removeMember(memberId),
-                                  )
-                                : null,
-                          );
-                        },
-                      ))
-                  .toList(),
+              children: (clubData['members'] as List<dynamic>?)
+                      ?.map((memberId) => FutureBuilder<String>(
+                            future: _fetchBladerName(memberId),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return Text('Loading...');
+                              }
+                              if (snapshot.hasError || !snapshot.hasData) {
+                                return Text('Unknown');
+                              }
+                              return ListTile(
+                                title: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ProfileDetailPage(uid: memberId),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(snapshot.data!,
+                                      style: TextStyle(
+                                          color: Colors.blue,
+                                          decoration:
+                                              TextDecoration.underline)),
+                                ),
+                                trailing: isLeader && memberId != userId
+                                    ? IconButton(
+                                        icon: Icon(Icons.remove_circle),
+                                        onPressed: () =>
+                                            _removeMember(memberId),
+                                      )
+                                    : null,
+                              );
+                            },
+                          ))
+                      .toList() ??
+                  [],
             ),
           ),
           if (!isLeader)
@@ -104,7 +153,7 @@ class ClubDetailPage extends StatelessWidget {
     );
   }
 
-  Future<String> _fetchBladerName(String uid) async {
+  Future<String> _fetchBladerName(String? uid) async {
     if (uid == null) return 'No vice-captain assigned';
     DocumentSnapshot<Map<String, dynamic>> userSnapshot =
         await FirebaseFirestore.instance.collection('users').doc(uid).get();

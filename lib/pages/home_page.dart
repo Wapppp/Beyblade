@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -31,13 +30,8 @@ class _HomePageState extends State<HomePage> {
           .get();
       setState(() {
         _user = user;
-<<<<<<< HEAD
-        _bladerName = userData.get('blader_name') ?? user.displayName ?? 'Guest';
-        _profilePictureUrl = userData.get('profile_picture');
-=======
         _bladerName =
             userData.get('blader_name') ?? user.displayName ?? 'Guest';
->>>>>>> b4abce09f5e7ece45b855d13f2a3991f4dc2f351
       });
     }
   }
@@ -76,7 +70,8 @@ class _HomePageState extends State<HomePage> {
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white, // Text color set to white
-                      fontFamily: 'Montserrat', // Example of using a modern font
+                      fontFamily:
+                          'Montserrat', // Example of using a modern font
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -87,11 +82,13 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Container(
-            color: Color(0xFFB8C1EC), // Bottom navigation background color updated
+            color:
+                Color(0xFFB8C1EC), // Bottom navigation background color updated
             padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
             child: BottomNavigationBar(
               currentIndex: _selectedIndex.clamp(0, 3),
-              backgroundColor: Color(0xFFB8C1EC), // Background color for BottomNavigationBar
+              backgroundColor:
+                  Color(0xFFB8C1EC), // Background color for BottomNavigationBar
               items: [
                 _buildBottomNavigationBarItem(Icons.home, 'Home'),
                 _buildBottomNavigationBarItem(Icons.event, 'Tournaments'),
@@ -116,42 +113,6 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildUserDropdown() {
     if (_user != null) {
-<<<<<<< HEAD
-      return Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundImage: _profilePictureUrl != null
-                ? NetworkImage(_profilePictureUrl!)
-                : AssetImage('assets/default_avatar.png'),
-            child: _profilePictureUrl == null ? Icon(Icons.person, size: 32) : null,
-          ),
-          SizedBox(width: 8),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: 'Hello, $_bladerName',
-              icon: Icon(Icons.arrow_drop_down),
-              onChanged: (String? newValue) {
-                if (newValue == 'Logout') {
-                  _signOut();
-                } else if (newValue == 'My Profile') {
-                  sl<NavigationService>().navigateTo('/profile');
-                }
-              },
-              items: <String>['Hello, $_bladerName', 'My Profile', 'Logout']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(
-                    value,
-                    style: TextStyle(color: Colors.white), // Button text color
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-=======
       return DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: 'Hello, $_bladerName',
@@ -171,7 +132,6 @@ class _HomePageState extends State<HomePage> {
             );
           }).toList(),
         ),
->>>>>>> b4abce09f5e7ece45b855d13f2a3991f4dc2f351
       );
     } else {
       return Row(
@@ -181,8 +141,10 @@ class _HomePageState extends State<HomePage> {
               sl<NavigationService>().navigateTo('/login');
             },
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF232946)), // Background color
-              foregroundColor: MaterialStateProperty.all<Color>(Colors.white), // Text color
+              backgroundColor: MaterialStateProperty.all<Color>(
+                  Color(0xFF232946)), // Background color
+              foregroundColor:
+                  MaterialStateProperty.all<Color>(Colors.white), // Text color
               shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                 RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20), // Rounded corners
@@ -197,8 +159,10 @@ class _HomePageState extends State<HomePage> {
               sl<NavigationService>().navigateTo('/register');
             },
             style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF232946)), // Background color
-              foregroundColor: MaterialStateProperty.all<Color>(Colors.white), // Text color
+              backgroundColor: MaterialStateProperty.all<Color>(
+                  Color(0xFF232946)), // Background color
+              foregroundColor:
+                  MaterialStateProperty.all<Color>(Colors.white), // Text color
               shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                 RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20), // Rounded corners
@@ -226,19 +190,12 @@ class _HomePageState extends State<HomePage> {
         sl<NavigationService>().navigatorKey.currentState!.pushNamed('/home');
         break;
       case 1:
-<<<<<<< HEAD
-        sl<NavigationService>().navigatorKey.currentState!.pushNamed('/tournaments');
-        break;
-      case 2:
-        sl<NavigationService>().navigatorKey.currentState!.pushNamed('/rankings');
-=======
         sl<NavigationService>()
             .navigateTo('/tournaments'); // Navigate to Tournaments page
         break;
       case 2:
         sl<NavigationService>()
             .navigateTo('/rankings'); // Navigate to Rankings page
->>>>>>> b4abce09f5e7ece45b855d13f2a3991f4dc2f351
         break;
       case 3:
         sl<NavigationService>().navigatorKey.currentState!.pushNamed('/club');

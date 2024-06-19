@@ -14,7 +14,6 @@ import 'pages/rankings_page.dart';
 import 'pages/tournament_page.dart';
 import 'pages/join_club_page.dart';
 import 'pages/club_detail_page.dart';
-import 'pages/tournaments_page.dart'; // Import TournamentsPage
 
 // Import your local dependencies
 import 'pages/data/injection_container.dart'; // Import sl from here
@@ -27,14 +26,13 @@ void main() async {
   try {
     await Firebase.initializeApp(
       options: FirebaseOptions(
-        apiKey: "AIzaSyBLRd6X2X7mZ_lEHlGZzv0A_H9S6L1jqxA",
-        authDomain: "test123-7ff7e.firebaseapp.com",
-        projectId: "test123-7ff7e",
-        storageBucket: "test123-7ff7e.appspot.com",
-        messagingSenderId: "498981798184",
-        appId: "1:498981798184:web:3d567a05bd78108d5a901d",
-        measurementId: "G-XJHHBQTNC6"
-      ),
+          apiKey: "AIzaSyBLRd6X2X7mZ_lEHlGZzv0A_H9S6L1jqxA",
+          authDomain: "test123-7ff7e.firebaseapp.com",
+          projectId: "test123-7ff7e",
+          storageBucket: "test123-7ff7e.appspot.com",
+          messagingSenderId: "498981798184",
+          appId: "1:498981798184:web:3d567a05bd78108d5a901d",
+          measurementId: "G-XJHHBQTNC6"),
     );
 
     setupLocator(); // Initialize GetIt and setup NavigationService
@@ -68,9 +66,11 @@ class MyApp extends StatelessWidget {
           '/club': (context) => JoinClubPage(),
           '/create_club': (context) => CreateClubPage(),
           '/rankings': (context) => RankingsPage(),
-          '/tournaments': (context) => TournamentsPage(), // Add the route for TournamentsPage
+          '/tournaments': (context) =>
+              TournamentsPage(), // Add the route for TournamentsPage
         },
-        navigatorKey: sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt
+        navigatorKey:
+            sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt
       ),
     );
   }
