@@ -20,7 +20,8 @@ class RankingsPage extends StatelessWidget {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                sl<NavigationService>().navigateTo('/profile'); // Example navigation using NavigationService
+                sl<NavigationService>().navigateTo(
+                    '/profile'); // Example navigation using NavigationService
               },
               child: Text('Go to Profile'),
             ),
