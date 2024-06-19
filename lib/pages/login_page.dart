@@ -30,7 +30,7 @@ class _LoginPageState extends State<LoginPage> {
         if (userCredential.additionalUserInfo!.isNewUser) {
           await _storeUserDataInFirestore(userCredential.user!);
         }
-        Navigator.pushReplacementNamed(context, '/home');
+        _handleLogin(userCredential.user!);
       } else {
         print('Google Sign In canceled');
       }
@@ -49,6 +49,41 @@ class _LoginPageState extends State<LoginPage> {
       print('User data stored in Firestore successfully!');
     } catch (e) {
       print('Error storing user data in Firestore: $e');
+    }
+  }
+
+  Future<void> _handleLogin(User user) async {
+    try {
+      // Check if the user exists in 'users' collection
+      DocumentSnapshot<Map<String, dynamic>> userSnapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+      // Check if the user exists in 'organizers' collection
+      DocumentSnapshot<Map<String, dynamic>> organizerSnapshot =
+          await FirebaseFirestore.instance
+              .collection('organizers')
+              .doc(user.uid)
+              .get();
+
+      // Determine user role
+      String? userRole;
+      if (userSnapshot.exists) {
+        userRole = userSnapshot.data()?['role'];
+      } else if (organizerSnapshot.exists) {
+        userRole = organizerSnapshot.data()?['role'];
+      }
+
+      // Navigate based on user role
+      if (userRole == 'organizer') {
+        Navigator.pushReplacementNamed(context, '/organizer');
+      } else {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
     }
   }
 
@@ -83,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
                       password: _passwordController.text.trim(),
                     );
                     if (userCredential.user != null) {
-                      Navigator.pushReplacementNamed(context, '/home');
+                      _handleLogin(userCredential.user!);
                     }
                   } on FirebaseAuthException catch (e) {
                     print('FirebaseAuthException: $e');

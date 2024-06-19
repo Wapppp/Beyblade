@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -38,13 +37,15 @@ class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser != null) {
-        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken!,
           idToken: googleAuth.idToken!,
         );
 
-        final UserCredential userCredential = await _auth.signInWithCredential(credential);
+        final UserCredential userCredential =
+            await _auth.signInWithCredential(credential);
         final User? user = userCredential.user;
 
         if (user != null) {
@@ -59,10 +60,12 @@ class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
 
   Future<void> _storeOrganizerDataInFirestore(User user) async {
     try {
+      // Store user data in Firestore with 'role' set to 'organizer'
       await _firestore.collection('organizers').doc(user.uid).set({
         'organizer_name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'photoUrl': user.photoURL ?? '',
+        'role': 'organizer', // Assigning role as 'organizer'
       });
     } catch (e) {
       print('Error storing organizer data: $e');

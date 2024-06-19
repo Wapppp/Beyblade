@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'admin_manage_users.dart'; // Import the new file
 
 class AdminPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -126,20 +127,6 @@ class AdminPage extends StatelessWidget {
 }
 
 // Placeholder pages for different admin functionalities
-
-class UserManagementPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('User Management'),
-      ),
-      body: Center(
-        child: Text('User Management Content Here'),
-      ),
-    );
-  }
-}
 
 class ContentManagementPage extends StatelessWidget {
   @override

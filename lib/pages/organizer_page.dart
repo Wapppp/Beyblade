@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class OrganizerPage extends StatefulWidget {
   @override
@@ -7,8 +7,6 @@ class OrganizerPage extends StatefulWidget {
 }
 
 class _OrganizerPageState extends State<OrganizerPage> {
-  List<TournamentEvent> events = []; // List to store created tournament events
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,7 +36,8 @@ class _OrganizerPageState extends State<OrganizerPage> {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundImage: NetworkImage('https://via.placeholder.com/150'),
+                    backgroundImage:
+                        NetworkImage('https://via.placeholder.com/150'),
                   ),
                   SizedBox(height: 10),
                   Text(
@@ -54,21 +53,23 @@ class _OrganizerPageState extends State<OrganizerPage> {
             ),
             ListTile(
               leading: Icon(Icons.event, color: Colors.amber.shade600),
-              title: Text('Create an Event', style: TextStyle(color: Colors.black)),
+              title: Text('Create an Event',
+                  style: TextStyle(color: Colors.black)),
               onTap: () {
-                // Handle the Create an Event action here
                 Navigator.pop(context); // Close the drawer
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => CreateEventScreen(onEventCreated: addEvent)),
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          CreateEventScreen(onEventCreated: addEvent)),
                 );
               },
             ),
             ListTile(
               leading: Icon(Icons.dashboard, color: Colors.amber.shade600),
-              title: Text('Organizer Dashboard', style: TextStyle(color: Colors.black)),
+              title: Text('Organizer Dashboard',
+                  style: TextStyle(color: Colors.black)),
               onTap: () {
-                // Handle the Organizer Dashboard action here
                 Navigator.pop(context); // Close the drawer
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Organizer Dashboard tapped')),
@@ -105,21 +106,75 @@ class _OrganizerPageState extends State<OrganizerPage> {
                 ),
                 SizedBox(height: 20),
                 Expanded(
-                  child: DataTable(
-                    columns: [
-                      DataColumn(label: Text('Name', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Location', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Description', style: TextStyle(fontWeight: FontWeight.bold))),
-                    ],
-                    rows: events.map((event) => DataRow(
-                      cells: [
-                        DataCell(Text(event.name, style: TextStyle(color: Colors.white))),
-                        DataCell(Text(event.date, style: TextStyle(color: Colors.white))),
-                        DataCell(Text(event.location, style: TextStyle(color: Colors.white))),
-                        DataCell(Text(event.description, style: TextStyle(color: Colors.white))),
-                      ],
-                    )).toList(),
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('tournaments')
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text('Error: ${snapshot.error}',
+                              style: TextStyle(color: Colors.white)),
+                        );
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return Center(
+                          child: Text('No tournaments available',
+                              style: TextStyle(color: Colors.white)),
+                        );
+                      }
+
+                      final events = snapshot.data!.docs.map((doc) {
+                        return TournamentEvent(
+                          name: doc['name'],
+                          date: doc['date'],
+                          location: doc['location'],
+                          description: doc['description'],
+                        );
+                      }).toList();
+
+                      return DataTable(
+                        columns: [
+                          DataColumn(
+                              label: Text('Name',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white))),
+                          DataColumn(
+                              label: Text('Date',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white))),
+                          DataColumn(
+                              label: Text('Location',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white))),
+                          DataColumn(
+                              label: Text('Description',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white))),
+                        ],
+                        rows: events
+                            .map((event) => DataRow(
+                                  cells: [
+                                    DataCell(Text(event.name,
+                                        style: TextStyle(color: Colors.white))),
+                                    DataCell(Text(event.date,
+                                        style: TextStyle(color: Colors.white))),
+                                    DataCell(Text(event.location,
+                                        style: TextStyle(color: Colors.white))),
+                                    DataCell(Text(event.description,
+                                        style: TextStyle(color: Colors.white))),
+                                  ],
+                                ))
+                            .toList(),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -131,13 +186,20 @@ class _OrganizerPageState extends State<OrganizerPage> {
   }
 
   void addEvent(TournamentEvent event) {
-    setState(() {
-      events.add(event);
+    FirebaseFirestore.instance.collection('tournaments').add({
+      'name': event.name,
+      'date': event.date,
+      'location': event.location,
+      'description': event.description,
+    }).then((_) {
+      // Optionally show a success message or perform other actions
+    }).catchError((error) {
+      // Handle any errors
+      print('Error adding event: $error');
     });
   }
 }
 
-// Define TournamentEvent class
 class TournamentEvent {
   final String name;
   final String date;
@@ -251,7 +313,6 @@ class CreateEventScreen extends StatelessWidget {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // Create a TournamentEvent object
                 TournamentEvent event = TournamentEvent(
                   name: nameController.text,
                   date: dateController.text,
@@ -259,19 +320,17 @@ class CreateEventScreen extends StatelessWidget {
                   description: descriptionController.text,
                 );
 
-                // Call the callback function to notify OrganizerPage
                 onEventCreated(event);
 
-                // Show a SnackBar to indicate event creation
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Tournament Event Created')),
                 );
 
-                // Go back to previous screen
                 Navigator.pop(context);
               },
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all<Color>(Colors.amber.shade600),
+                backgroundColor:
+                    MaterialStateProperty.all<Color>(Colors.amber.shade600),
                 foregroundColor: MaterialStateProperty.all<Color>(Colors.black),
                 padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
                   EdgeInsets.symmetric(vertical: 16),
