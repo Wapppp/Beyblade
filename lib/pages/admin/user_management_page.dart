@@ -113,6 +113,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   'role': roleController.text,
                 });
                 Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('User updated successfully')),
+                );
               },
               child: Text('Save'),
             ),
@@ -140,6 +143,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
               onPressed: () async {
                 await _firestore.collection('users').doc(document.id).delete();
                 Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('User deleted successfully')),
+                );
               },
               child: Text('Delete'),
             ),
@@ -191,6 +197,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   'role': roleController.text,
                 });
                 Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('User created successfully')),
+                );
               },
               child: Text('Create'),
             ),

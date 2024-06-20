@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // Import DateFormat for date formatting
 import 'package:firebase_auth/firebase_auth.dart';
 
 class TournamentDetailsPage extends StatefulWidget {
@@ -15,6 +16,7 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
   bool isParticipant = false;
   String participantId = '';
   late User? currentUser;
+  bool isOrganizer = false; // Track if current user is organizer
 
   @override
   void initState() {
@@ -22,6 +24,7 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
     currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
       _checkParticipantStatus();
+      _checkOrganizerStatus(); // Check if user is an organizer
     }
   }
 
@@ -48,9 +51,33 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
     }
   }
 
+  void _checkOrganizerStatus() async {
+    try {
+      // Check if user exists in the organizers collection
+      DocumentSnapshot organizerDoc = await FirebaseFirestore.instance
+          .collection('organizers')
+          .doc(currentUser!.uid)
+          .get();
+
+      setState(() {
+        isOrganizer = organizerDoc.exists;
+      });
+    } catch (e) {
+      print('Error checking organizer status: $e');
+    }
+  }
+
   Future<void> _joinTournament(BuildContext context) async {
     if (currentUser == null) {
       // Handle if user is not authenticated
+      return;
+    }
+
+    // Check if the current user is an organizer
+    if (isOrganizer) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Organizers cannot join this tournament')),
+      );
       return;
     }
 
@@ -129,14 +156,16 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
-            Text('Date: ${widget.tournament.date}'),
+            Text('Date: ${_formatTimestamp(widget.tournament.date)}'),
             SizedBox(height: 8),
             Text('Location: ${widget.tournament.location}'),
             SizedBox(height: 8),
             Text('Description: ${widget.tournament.description}'),
             SizedBox(height: 16),
             ElevatedButton(
-              onPressed: isParticipant ? null : () => _joinTournament(context),
+              onPressed: isOrganizer || isParticipant
+                  ? null
+                  : () => _joinTournament(context),
               child: Text(isParticipant ? 'Joined' : 'Join Tournament'),
             ),
             if (isParticipant)
@@ -231,12 +260,17 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
       throw e;
     }
   }
+
+  String _formatTimestamp(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    return DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
+  }
 }
 
 class TournamentEvent {
   final String id;
   final String name;
-  final String date;
+  final Timestamp date; // Changed to Timestamp
   final String location;
   final String description;
 

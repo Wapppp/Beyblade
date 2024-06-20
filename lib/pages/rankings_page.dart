@@ -8,7 +8,7 @@ class RankingsPage extends StatefulWidget {
 }
 
 class _RankingsPageState extends State<RankingsPage> {
-  List<Map<String, String>> rankings = [
+  final List<Map<String, String>> _rankings = [
     {'name': 'Blader A', 'rank': '1'},
     {'name': 'Blader B', 'rank': '2'},
     {'name': 'Blader C', 'rank': '3'},
@@ -16,30 +16,29 @@ class _RankingsPageState extends State<RankingsPage> {
   ];
 
   int _currentPage = 0;
-  int _itemsPerPage = 5;
+  final int _itemsPerPage = 5;
 
   @override
   void initState() {
     super.initState();
-    _sortRankingsByName(); // Sort rankings by name initially
+    _sortRankingsByName();
   }
 
   void _sortRankingsByName() {
     setState(() {
-      rankings.sort((a, b) => a['name']!.compareTo(b['name']!));
-      _currentPage = 0; // Reset to first page after sorting
+      _rankings.sort((a, b) => a['name']!.compareTo(b['name']!));
+      _currentPage = 0;
     });
   }
 
   List<Map<String, String>> _getPaginatedRankings() {
-    int start = _currentPage * _itemsPerPage;
-    int end = start + _itemsPerPage;
-    return rankings.sublist(
-        start, end > rankings.length ? rankings.length : end);
+    final start = _currentPage * _itemsPerPage;
+    final end = (start + _itemsPerPage).clamp(0, _rankings.length);
+    return _rankings.sublist(start, end);
   }
 
   void _nextPage() {
-    if ((_currentPage + 1) * _itemsPerPage < rankings.length) {
+    if ((_currentPage + 1) * _itemsPerPage < _rankings.length) {
       setState(() {
         _currentPage++;
       });
@@ -58,41 +57,38 @@ class _RankingsPageState extends State<RankingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Rankings', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black, // Changed to dark color
+        title: const Text('Rankings', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.black,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            sl<NavigationService>()
-                .navigateTo('/home'); // Navigate to home page
-          },
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => sl<NavigationService>().navigateTo('/home'),
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
-            Text(
+            const Text(
               'Top Bladers',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.black, // Changed to dark color
+                color: Colors.black,
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
                 itemCount: _getPaginatedRankings().length,
                 itemBuilder: (context, index) {
-                  var ranking = _getPaginatedRankings()[index];
+                  final ranking = _getPaginatedRankings()[index];
                   return Card(
                     elevation: 4,
-                    margin: EdgeInsets.symmetric(vertical: 10),
+                    margin: const EdgeInsets.symmetric(vertical: 10),
                     child: ListTile(
                       leading: CircleAvatar(
                         child: Text(ranking['rank']!),
-                        backgroundColor: Colors.black, // Changed to dark color
+                        backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
                       ),
                       title: Text(ranking['name']!),
@@ -108,37 +104,38 @@ class _RankingsPageState extends State<RankingsPage> {
                 ElevatedButton(
                   onPressed: _previousPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black, // Changed to dark color
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    textStyle: TextStyle(fontSize: 18),
+                    backgroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    textStyle: const TextStyle(fontSize: 18),
                   ),
-                  child:
-                      Text('Previous', style: TextStyle(color: Colors.white)),
+                  child: const Text('Previous',
+                      style: TextStyle(color: Colors.white)),
                 ),
                 ElevatedButton(
                   onPressed: _nextPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black, // Changed to dark color
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    textStyle: TextStyle(fontSize: 18),
+                    backgroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    textStyle: const TextStyle(fontSize: 18),
                   ),
-                  child: Text('Next', style: TextStyle(color: Colors.white)),
+                  child:
+                      const Text('Next', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                sl<NavigationService>().navigateTo(
-                    '/profile'); // Example navigation using NavigationService
-              },
+              onPressed: () => sl<NavigationService>().navigateTo('/profile'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black, // Changed to dark color
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                textStyle: TextStyle(fontSize: 18),
+                backgroundColor: Colors.black,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                textStyle: const TextStyle(fontSize: 18),
               ),
-              child:
-                  Text('Go to Profile', style: TextStyle(color: Colors.white)),
+              child: const Text('Go to Profile',
+                  style: TextStyle(color: Colors.white)),
             ),
           ],
         ),

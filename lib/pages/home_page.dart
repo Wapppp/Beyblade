@@ -6,12 +6,14 @@ import 'data/navigation_service.dart';
 import 'package:intl/intl.dart'; // Import the intl package for date formatting
 
 class TournamentEvent {
+  final String id;
   final String name;
-  final String date;
+  final Timestamp date;
   final String location;
   final String description;
 
   TournamentEvent({
+    required this.id,
     required this.name,
     required this.date,
     required this.location,
@@ -233,68 +235,71 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             SizedBox(height: 16),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('tournaments')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('tournaments')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No tournaments available',
-                      style: TextStyle(color: Colors.grey),
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'No tournaments available',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
+                  }
+
+                  final List<TournamentEvent> events =
+                      snapshot.data!.docs.map((doc) {
+                    return TournamentEvent(
+                      id: doc.id,
+                      name: doc['name'],
+                      date: doc['date'],
+                      location: doc['location'],
+                      description: doc['description'],
+                    );
+                  }).toList();
+
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columns: [
+                        DataColumn(
+                          label: Text('Name',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        DataColumn(
+                          label: Text('Date',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        DataColumn(
+                          label: Text('Location',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        DataColumn(
+                          label: Text('Description',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                      rows: events
+                          .map((event) => DataRow(
+                                cells: [
+                                  DataCell(Text(event.name)),
+                                  DataCell(Text(_formatTimestamp(event.date))),
+                                  DataCell(Text(event.location)),
+                                  DataCell(Text(event.description)),
+                                ],
+                              ))
+                          .toList(),
                     ),
                   );
-                }
-
-                final List<TournamentEvent> events =
-                    snapshot.data!.docs.map((doc) {
-                  return TournamentEvent(
-                    name: doc['name'] ?? '',
-                    date: _formatTimestamp(doc['date']),
-                    location: doc['location'] ?? '',
-                    description: doc['description'] ?? '',
-                  );
-                }).toList();
-
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: [
-                      DataColumn(
-                        label: Text('Name',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      DataColumn(
-                        label: Text('Date',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      DataColumn(
-                        label: Text('Location',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      DataColumn(
-                        label: Text('Description',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                    rows: events.map((event) {
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(event.name)),
-                          DataCell(Text(event.date)),
-                          DataCell(Text(event.location)),
-                          DataCell(Text(event.description)),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                );
-              },
+                },
+              ),
             ),
           ],
         ),
@@ -302,13 +307,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  String _formatTimestamp(dynamic timestamp) {
-    if (timestamp is Timestamp) {
-      DateTime dateTime = timestamp.toDate();
-      return DateFormat('yyyy-MM-dd – kk:mm').format(dateTime);
-    } else {
-      return '';
-    }
+  String _formatTimestamp(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    return DateFormat('dd/MM/yyyy').format(dateTime);
   }
 }
 

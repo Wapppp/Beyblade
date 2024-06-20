@@ -13,12 +13,14 @@ class ManageClubPage extends StatefulWidget {
 class _ManageClubPageState extends State<ManageClubPage> {
   late Map<String, dynamic> clubData;
   String? viceCaptainName;
+  String? selectedMemberToRemove; // Nullable
 
   @override
   void initState() {
     super.initState();
     clubData = widget.clubSnapshot.data() as Map<String, dynamic>;
     viceCaptainName = clubData['vice_captain_name'];
+    selectedMemberToRemove = null; // Initialize as null
   }
 
   @override
@@ -45,11 +47,18 @@ class _ManageClubPageState extends State<ManageClubPage> {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _showAssignViceCaptainBottomSheet(context);
+                  child: DropdownButtonFormField<String>(
+                    value: viceCaptainName,
+                    hint: Text('Select Vice Captain'),
+                    items: _buildMemberDropdownItems(),
+                    onChanged: (String? value) {
+                      if (value != null) {
+                        setState(() {
+                          viceCaptainName = value;
+                        });
+                        _assignViceCaptain(value);
+                      }
                     },
-                    child: Text('Assign Vice Captain'),
                   ),
                 ),
               ],
@@ -62,10 +71,79 @@ class _ManageClubPageState extends State<ManageClubPage> {
             Expanded(
               child: _buildMembersList(clubData['members']),
             ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedMemberToRemove,
+                    hint: Text('Select Member to Remove'),
+                    items: _buildMemberDropdownItemsForRemoval(),
+                    onChanged: (String? value) {
+                      setState(() {
+                        selectedMemberToRemove = value;
+                      });
+                    },
+                  ),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    if (selectedMemberToRemove != null) {
+                      _removeMember(selectedMemberToRemove!);
+                    }
+                  },
+                  child: Text('Remove Member'),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  List<DropdownMenuItem<String>> _buildMemberDropdownItems() {
+    List<DropdownMenuItem<String>> items = [];
+    List<dynamic> members = clubData['members'];
+    String leaderId = clubData['leader'];
+
+    members.forEach((memberId) {
+      if (memberId != leaderId) {
+        String memberName =
+            memberId.toString(); // Ensure memberId is converted to String
+        items.add(DropdownMenuItem(
+          value: memberName,
+          child: Text(memberName),
+        ));
+      }
+    });
+
+    // If there are no members available, add a placeholder item
+    if (items.isEmpty) {
+      items.add(DropdownMenuItem(
+        value: null,
+        child: Text('No members available'),
+      ));
+    }
+
+    return items;
+  }
+
+  List<DropdownMenuItem<String>> _buildMemberDropdownItemsForRemoval() {
+    List<DropdownMenuItem<String>> items = [];
+    List<dynamic> members = clubData['members'];
+
+    members.forEach((memberId) {
+      String memberName =
+          memberId.toString(); // Ensure memberId is converted to String
+      items.add(DropdownMenuItem(
+        value: memberName,
+        child: Text(memberName),
+      ));
+    });
+
+    return items;
   }
 
   Widget _buildMembersList(List<dynamic>? members) {
@@ -76,125 +154,10 @@ class _ManageClubPageState extends State<ManageClubPage> {
     return ListView.builder(
       itemCount: members.length,
       itemBuilder: (context, index) {
-        String memberId = members[index].toString();
-        return FutureBuilder<DocumentSnapshot>(
-          future: _fetchMemberData(memberId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError || !snapshot.hasData) {
-              return ListTile(
-                title: Text(
-                    'Member ID: $memberId'), // Fallback if data fetch fails
-                trailing: IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () {
-                    _showRemoveMemberDialog(memberId);
-                  },
-                ),
-              );
-            }
-            var memberData = snapshot.data!.data() as Map<String, dynamic>;
-            String bladerName = memberData['blader_name'] ?? 'Unknown';
-            return ListTile(
-              title: Text(bladerName),
-              trailing: IconButton(
-                icon: Icon(Icons.delete),
-                onPressed: () {
-                  _showRemoveMemberDialog(memberId);
-                },
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<DocumentSnapshot> _fetchMemberData(String memberId) {
-    return FirebaseFirestore.instance.collection('users').doc(memberId).get();
-  }
-
-  void _showAssignViceCaptainBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Container(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Select Vice Captain',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 16),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: clubData['members'].length,
-                    itemBuilder: (context, index) {
-                      String memberId = clubData['members'][index].toString();
-                      return ListTile(
-                        title: FutureBuilder<DocumentSnapshot>(
-                          future: _fetchMemberData(memberId),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return CircularProgressIndicator();
-                            }
-                            if (snapshot.hasError || !snapshot.hasData) {
-                              return Text(
-                                  'Member ID: $memberId'); // Fallback if data fetch fails
-                            }
-                            var memberData =
-                                snapshot.data!.data() as Map<String, dynamic>;
-                            String bladerName =
-                                memberData['blader_name'] ?? 'Unknown';
-                            return Text(bladerName);
-                          },
-                        ),
-                        onTap: () {
-                          _assignViceCaptain(memberId);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showRemoveMemberDialog(String memberId) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Remove Member'),
-          content: Text('Are you sure you want to remove this member?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _removeMember(memberId);
-                Navigator.pop(context);
-              },
-              child: Text('Remove'),
-            ),
-          ],
+        String memberName =
+            members[index].toString(); // Convert memberId to String
+        return ListTile(
+          title: Text(memberName),
         );
       },
     );
@@ -218,6 +181,7 @@ class _ManageClubPageState extends State<ManageClubPage> {
     });
     setState(() {
       clubData['members'].remove(memberId);
+      selectedMemberToRemove = null; // Reset selected member after removal
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Member removed successfully')),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_management_page.dart'; // Import the new file
+import 'club_management.dart'; // Import the new file
 
 class AdminPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -68,9 +69,11 @@ class AdminPage extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => UserManagementPage()));
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserManagementPage(),
+                      ),
+                    );
                   },
                 ),
                 ListTile(
@@ -78,9 +81,11 @@ class AdminPage extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ContentManagementPage()));
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ContentManagementPage(),
+                      ),
+                    );
                   },
                 ),
                 ListTile(
@@ -89,9 +94,11 @@ class AdminPage extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => TournamentManagementPage()));
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TournamentManagementPage(),
+                      ),
+                    );
                   },
                 ),
                 ListTile(
@@ -99,9 +106,11 @@ class AdminPage extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ClubManagementPage()));
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ClubManagementPage(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -151,20 +160,6 @@ class TournamentManagementPage extends StatelessWidget {
       ),
       body: Center(
         child: Text('Tournament Management Content Here'),
-      ),
-    );
-  }
-}
-
-class ClubManagementPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Club Management'),
-      ),
-      body: Center(
-        child: Text('Club Management Content Here'),
       ),
     );
   }

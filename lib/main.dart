@@ -12,10 +12,11 @@ import 'pages/rankings_page.dart';
 import 'pages/tournament_page.dart';
 import 'pages/join_club_page.dart';
 import 'pages/club_detail_page.dart';
-import 'pages/admin/admin_login_page.dart'; // Ensure correct path
-import 'pages/admin/admin_page.dart'; // Ensure correct path
-import 'pages/organizer_page.dart'; // Ensure correct path
-import 'pages/organizer_login_page.dart'; // Ensure correct path
+import 'pages/admin/admin_login_page.dart';
+import 'pages/admin/admin_page.dart';
+import 'pages/organizer_page.dart';
+import 'pages/organizer_login_page.dart';
+import 'pages/organizer_register_page.dart';
 
 // Import your local dependencies
 import 'pages/data/injection_container.dart'; // Adjust the path as per your structure
@@ -28,13 +29,14 @@ void main() async {
   try {
     await Firebase.initializeApp(
       options: FirebaseOptions(
-          apiKey: "AIzaSyBLRd6X2X7mZ_lEHlGZzv0A_H9S6L1jqxA",
-          authDomain: "test123-7ff7e.firebaseapp.com",
-          projectId: "test123-7ff7e",
-          storageBucket: "test123-7ff7e.appspot.com",
-          messagingSenderId: "498981798184",
-          appId: "1:498981798184:web:3d567a05bd78108d5a901d",
-          measurementId: "G-XJHHBQTNC6"),
+        apiKey: "AIzaSyBLRd6X2X7mZ_lEHlGZzv0A_H9S6L1jqxA",
+        authDomain: "test123-7ff7e.firebaseapp.com",
+        projectId: "test123-7ff7e",
+        storageBucket: "test123-7ff7e.appspot.com",
+        messagingSenderId: "498981798184",
+        appId: "1:498981798184:web:3d567a05bd78108d5a901d",
+        measurementId: "G-XJHHBQTNC6",
+      ),
     );
 
     setupLocator(); // Initialize GetIt and setup NavigationService
@@ -69,11 +71,11 @@ class MyApp extends StatelessWidget {
           '/create_club': (context) => CreateClubPage(),
           '/rankings': (context) => RankingsPage(),
           '/tournaments': (context) => TournamentsPage(),
-          '/admin': (context) => AdminLoginPage(), // Ensure correct route
-          '/admin_page': (context) => AdminPage(), // Ensure correct route
-          '/organizer': (context) => OrganizerPage(), // Ensure correct route
-          '/organizer_login': (context) =>
-              OrganizerLoginPage(), // Ensure correct route
+          '/admin': (context) => AdminLoginPage(),
+          '/admin_page': (context) => AdminPage(),
+          '/organizer': (context) => OrganizerPage(),
+          '/organizer_login': (context) => OrganizerLoginPage(),
+          '/register_organizer': (context) => OrganizerRegisterPage(),
         },
         navigatorKey:
             sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt

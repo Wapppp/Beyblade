@@ -1,64 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
-class OrganizerLoginPage extends StatefulWidget {
+class OrganizerRegisterPage extends StatefulWidget {
   @override
-  _OrganizerLoginPageState createState() => _OrganizerLoginPageState();
+  _OrganizerRegisterPageState createState() => _OrganizerRegisterPageState();
 }
 
-class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
+class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
 
-  Future<void> _signInWithEmailAndPassword() async {
+  Future<void> _registerWithEmailAndPassword() async {
     try {
-      // Sign in with email and password
+      // Create user with email and password
       final UserCredential userCredential =
-          await _auth.signInWithEmailAndPassword(
+          await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       if (userCredential.user != null) {
-        // Check if the organizer exists in Firestore
-        bool isValidOrganizer =
-            await _checkOrganizerExists(userCredential.user!.uid);
+        // Store organizer data in Firestore
+        await _storeOrganizerDataInFirestore(userCredential.user!);
 
-        if (isValidOrganizer) {
-          Navigator.pushReplacementNamed(context, '/organizer');
-        } else {
-          // If not a valid organizer, sign out and show error
-          await _auth.signOut();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Invalid organizer details')),
-          );
-        }
+        // Navigate to organizer page
+        Navigator.pushReplacementNamed(context, '/organizer');
       }
     } catch (e) {
-      print('Error during login: $e');
-      // Handle login errors here
-    }
-  }
-
-  Future<bool> _checkOrganizerExists(String organizerUid) async {
-    try {
-      // Check if the organizer exists in Firestore
-      DocumentSnapshot organizerSnapshot =
-          await _firestore.collection('organizers').doc(organizerUid).get();
-
-      return organizerSnapshot.exists;
-    } catch (e) {
-      print('Error checking organizer existence: $e');
-      return false;
+      print('Error during registration: $e');
+      // Handle registration errors here
     }
   }
 
   Future<void> _signInWithGoogle() async {
     try {
+      // Sign in with Google
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser != null) {
         final GoogleSignInAuthentication googleAuth =
@@ -73,18 +54,11 @@ class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
         final User? user = userCredential.user;
 
         if (user != null) {
-          // Check if the organizer exists in Firestore
-          bool isValidOrganizer = await _checkOrganizerExists(user.uid);
+          // Store organizer data in Firestore
+          await _storeOrganizerDataInFirestore(user);
 
-          if (isValidOrganizer) {
-            Navigator.pushReplacementNamed(context, '/organizer');
-          } else {
-            // If not a valid organizer, sign out and show error
-            await _auth.signOut();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Invalid organizer details')),
-            );
-          }
+          // Navigate to organizer page
+          Navigator.pushReplacementNamed(context, '/organizer');
         }
       }
     } catch (e) {
@@ -92,17 +66,39 @@ class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
     }
   }
 
+  Future<void> _storeOrganizerDataInFirestore(User user) async {
+    try {
+      // Store organizer details in Firestore under 'organizers' collection
+      await _firestore.collection('organizers').doc(user.uid).set({
+        'organizer_name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'photoUrl': user.photoURL ?? '',
+        'role': 'organizer',
+      });
+    } catch (e) {
+      print('Error storing organizer data: $e');
+    }
+  }
+
+  void _navigateToOrganizerLoginPage() {
+    Navigator.pushReplacementNamed(context, '/organizer_login');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Organizer Login'),
+        title: Text('Organizer Registration'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: 'Organizer Name'),
+            ),
             TextField(
               controller: _emailController,
               decoration: InputDecoration(labelText: 'Email'),
@@ -114,8 +110,8 @@ class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
             ),
             SizedBox(height: 20.0),
             ElevatedButton(
-              onPressed: _signInWithEmailAndPassword,
-              child: Text('Login'),
+              onPressed: _registerWithEmailAndPassword,
+              child: Text('Register'),
             ),
             SizedBox(height: 10.0),
             ElevatedButton(
@@ -129,12 +125,10 @@ class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
                 ],
               ),
             ),
-            SizedBox(height: 20.0),
+            SizedBox(height: 10.0),
             TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/register_organizer');
-              },
-              child: Text('Register as Organizer'),
+              onPressed: _navigateToOrganizerLoginPage,
+              child: Text('Already have an account? Login'),
             ),
           ],
         ),
