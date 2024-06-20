@@ -132,7 +132,7 @@ class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
             SizedBox(height: 20.0),
             TextButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/organizer_login');
+                Navigator.pushNamed(context, '/register_organizer');
               },
               child: Text('Register as Organizer'),
             ),
