@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'admin_manage_users.dart'; // Import the new file
+import 'user_management_page.dart'; // Import the new file
 
 class AdminPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;

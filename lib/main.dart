@@ -1,11 +1,8 @@
-import 'package:beyblade/pages/organizer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:js' as js;
 
-// Import your pages
+// Import your other pages
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/profile_page.dart';
@@ -15,13 +12,13 @@ import 'pages/rankings_page.dart';
 import 'pages/tournament_page.dart';
 import 'pages/join_club_page.dart';
 import 'pages/club_detail_page.dart';
-import 'pages/admin_login_page.dart';
-import 'pages/admin_page.dart';
-import 'pages/organizer_page.dart';
-import 'pages/organizer_login_page.dart';
+import 'pages/admin/admin_login_page.dart'; // Ensure correct path
+import 'pages/admin/admin_page.dart'; // Ensure correct path
+import 'pages/organizer_page.dart'; // Ensure correct path
+import 'pages/organizer_login_page.dart'; // Ensure correct path
 
 // Import your local dependencies
-import 'pages/data/injection_container.dart'; // Import sl from here
+import 'pages/data/injection_container.dart'; // Adjust the path as per your structure
 import 'pages/data/navigation_service.dart';
 import 'pages/data/home_view_model.dart';
 
@@ -72,10 +69,11 @@ class MyApp extends StatelessWidget {
           '/create_club': (context) => CreateClubPage(),
           '/rankings': (context) => RankingsPage(),
           '/tournaments': (context) => TournamentsPage(),
-          '/admin': (context) => AdminLoginPage(),
-          '/admin_page': (context) => AdminPage(),
-          '/organizer': (context) => OrganizerPage(),
-          '/organizer_login': (context) => OrganizerLoginPage(),
+          '/admin': (context) => AdminLoginPage(), // Ensure correct route
+          '/admin_page': (context) => AdminPage(), // Ensure correct route
+          '/organizer': (context) => OrganizerPage(), // Ensure correct route
+          '/organizer_login': (context) =>
+              OrganizerLoginPage(), // Ensure correct route
         },
         navigatorKey:
             sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt

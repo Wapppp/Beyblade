@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'data/injection_container.dart'; // Import dependency injection container
-import 'data/navigation_service.dart'; // Import navigation service
+import 'data/navigation_service.dart';
+import 'package:intl/intl.dart'; // Import the intl package for date formatting
 
 class TournamentEvent {
   final String name;
@@ -112,8 +113,7 @@ class _HomePageState extends State<HomePage> {
             radius: 20,
             backgroundImage: _profilePictureUrl.isNotEmpty
                 ? NetworkImage(_profilePictureUrl)
-                : AssetImage(
-                    'assets/images/default_profile.png'), // Placeholder image
+                : AssetImage('assets/images/default_profile.png'),
           ),
         ),
         SizedBox(width: 8),
@@ -241,6 +241,7 @@ class _HomePageState extends State<HomePage> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 }
+
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
                     child: Text(
@@ -250,48 +251,47 @@ class _HomePageState extends State<HomePage> {
                   );
                 }
 
-                final events = snapshot.data!.docs.map((doc) {
+                final List<TournamentEvent> events =
+                    snapshot.data!.docs.map((doc) {
                   return TournamentEvent(
-                    name: doc['name'],
-                    date: doc['date'],
-                    location: doc['location'],
-                    description: doc['description'],
+                    name: doc['name'] ?? '',
+                    date: _formatTimestamp(doc['date']),
+                    location: doc['location'] ?? '',
+                    description: doc['description'] ?? '',
                   );
                 }).toList();
 
-                return Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: [
-                        DataColumn(
-                          label: Text('Name',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        DataColumn(
-                          label: Text('Date',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        DataColumn(
-                          label: Text('Location',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        DataColumn(
-                          label: Text('Description',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                      rows: events
-                          .map((event) => DataRow(
-                                cells: [
-                                  DataCell(Text(event.name)),
-                                  DataCell(Text(event.date)),
-                                  DataCell(Text(event.location)),
-                                  DataCell(Text(event.description)),
-                                ],
-                              ))
-                          .toList(),
-                    ),
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columns: [
+                      DataColumn(
+                        label: Text('Name',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      DataColumn(
+                        label: Text('Date',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      DataColumn(
+                        label: Text('Location',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      DataColumn(
+                        label: Text('Description',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                    rows: events.map((event) {
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(event.name)),
+                          DataCell(Text(event.date)),
+                          DataCell(Text(event.location)),
+                          DataCell(Text(event.description)),
+                        ],
+                      );
+                    }).toList(),
                   ),
                 );
               },
@@ -300,6 +300,15 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  String _formatTimestamp(dynamic timestamp) {
+    if (timestamp is Timestamp) {
+      DateTime dateTime = timestamp.toDate();
+      return DateFormat('yyyy-MM-dd – kk:mm').format(dateTime);
+    } else {
+      return '';
+    }
   }
 }
 
