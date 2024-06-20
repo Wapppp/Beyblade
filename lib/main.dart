@@ -19,6 +19,7 @@ import 'pages/admin_login_page.dart';
 import 'pages/admin_page.dart';
 import 'pages/organizer_page.dart';
 import 'pages/organizer_login_page.dart';
+import 'pages/organizer_register_page.dart';
 
 // Import your local dependencies
 import 'pages/data/injection_container.dart'; // Import sl from here
@@ -76,6 +77,7 @@ class MyApp extends StatelessWidget {
           '/admin_page': (context) => AdminPage(),
           '/organizer': (context) => OrganizerPage(),
           '/organizer_login': (context) => OrganizerLoginPage(),
+          '/register_organizer': (context) => OrganizerRegisterPage(),
         },
         navigatorKey:
             sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt

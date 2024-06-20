@@ -29,10 +29,12 @@ class TournamentsPage extends StatelessWidget {
           }
 
           final tournaments = snapshot.data!.docs.map((doc) {
+            Timestamp dateTimestamp =
+                doc['date']; // Retrieve Timestamp from Firestore
             return TournamentEvent(
               id: doc.id, // Use document ID as tournament ID
               name: doc['name'],
-              date: doc['date'],
+              date: dateTimestamp, // Pass Timestamp as date
               location: doc['location'],
               description: doc['description'],
             );
@@ -44,7 +46,8 @@ class TournamentsPage extends StatelessWidget {
               final tournament = tournaments[index];
               return ListTile(
                 title: Text(tournament.name),
-                subtitle: Text(tournament.date),
+                subtitle:
+                    Text(_formatTimestamp(tournament.date)), // Format Timestamp
                 onTap: () {
                   Navigator.push(
                     context,
@@ -61,5 +64,11 @@ class TournamentsPage extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _formatTimestamp(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    // Customize formatting as needed (e.g., 'yyyy-MM-dd HH:mm')
   }
 }

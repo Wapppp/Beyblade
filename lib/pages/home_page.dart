@@ -5,12 +5,14 @@ import 'data/injection_container.dart'; // Import dependency injection container
 import 'data/navigation_service.dart'; // Import navigation service
 
 class TournamentEvent {
+  final String id;
   final String name;
-  final String date;
+  final Timestamp date;
   final String location;
   final String description;
 
   TournamentEvent({
+    required this.id,
     required this.name,
     required this.date,
     required this.location,
@@ -252,6 +254,7 @@ class _HomePageState extends State<HomePage> {
 
                 final events = snapshot.data!.docs.map((doc) {
                   return TournamentEvent(
+                    id: doc.id,
                     name: doc['name'],
                     date: doc['date'],
                     location: doc['location'],
@@ -259,39 +262,37 @@ class _HomePageState extends State<HomePage> {
                   );
                 }).toList();
 
-                return Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: [
-                        DataColumn(
-                          label: Text('Name',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        DataColumn(
-                          label: Text('Date',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        DataColumn(
-                          label: Text('Location',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        DataColumn(
-                          label: Text('Description',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                      rows: events
-                          .map((event) => DataRow(
-                                cells: [
-                                  DataCell(Text(event.name)),
-                                  DataCell(Text(event.date)),
-                                  DataCell(Text(event.location)),
-                                  DataCell(Text(event.description)),
-                                ],
-                              ))
-                          .toList(),
-                    ),
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columns: [
+                      DataColumn(
+                        label: Text('Name',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      DataColumn(
+                        label: Text('Date',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      DataColumn(
+                        label: Text('Location',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      DataColumn(
+                        label: Text('Description',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                    rows: events
+                        .map((event) => DataRow(
+                              cells: [
+                                DataCell(Text(event.name)),
+                                DataCell(Text(_formatTimestamp(event.date))),
+                                DataCell(Text(event.location)),
+                                DataCell(Text(event.description)),
+                              ],
+                            ))
+                        .toList(),
                   ),
                 );
               },
@@ -300,6 +301,11 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  String _formatTimestamp(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
   }
 }
 

@@ -64,11 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: InkWell(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => OrganizerLoginPage()),
-                  );
+                  Navigator.pushNamed(context, '/register_organizer');
                 },
                 child: Container(
                   padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
