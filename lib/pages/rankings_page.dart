@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:beyblade/pages/data/injection_container.dart'; // Import sl and NavigationService
-import 'data/navigation_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RankingsPage extends StatefulWidget {
   @override
@@ -8,30 +7,48 @@ class RankingsPage extends StatefulWidget {
 }
 
 class _RankingsPageState extends State<RankingsPage> {
-  final List<Map<String, String>> _rankings = [
-    {'name': 'Blader A', 'rank': '1'},
-    {'name': 'Blader B', 'rank': '2'},
-    {'name': 'Blader C', 'rank': '3'},
-    // Add more items here to simulate a large dataset
-  ];
-
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late List<Map<String, dynamic>> _rankings;
   int _currentPage = 0;
   final int _itemsPerPage = 5;
 
   @override
   void initState() {
     super.initState();
-    _sortRankingsByName();
+    _rankings = [];
+    _fetchRankings();
   }
 
-  void _sortRankingsByName() {
-    setState(() {
-      _rankings.sort((a, b) => a['name']!.compareTo(b['name']!));
-      _currentPage = 0;
-    });
+  void _fetchRankings() async {
+    try {
+      QuerySnapshot snapshot = await _firestore.collection('users').get();
+      List<Map<String, dynamic>> users = snapshot.docs.map((doc) {
+        return {
+          'name': doc['blader_name'] ?? 'No Name',
+          'won': doc['won'] ?? 0,
+          'lost': doc['lost'] ?? 0,
+        };
+      }).toList();
+
+      // Sort users by 'won' descending and 'lost' ascending
+      users.sort((a, b) {
+        if (a['won'] != b['won']) {
+          return b['won'].compareTo(a['won']); // Sort by won descending
+        } else {
+          return a['lost'].compareTo(
+              b['lost']); // If won is the same, sort by lost ascending
+        }
+      });
+
+      setState(() {
+        _rankings = users;
+      });
+    } catch (e) {
+      print('Error fetching rankings: $e');
+    }
   }
 
-  List<Map<String, String>> _getPaginatedRankings() {
+  List<Map<String, dynamic>> _getPaginatedRankings() {
     final start = _currentPage * _itemsPerPage;
     final end = (start + _itemsPerPage).clamp(0, _rankings.length);
     return _rankings.sublist(start, end);
@@ -61,7 +78,9 @@ class _RankingsPageState extends State<RankingsPage> {
         backgroundColor: Colors.black,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => sl<NavigationService>().navigateTo('/home'),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
       ),
       body: Padding(
@@ -87,12 +106,13 @@ class _RankingsPageState extends State<RankingsPage> {
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     child: ListTile(
                       leading: CircleAvatar(
-                        child: Text(ranking['rank']!),
+                        child: Text((index + 1).toString()),
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
                       ),
-                      title: Text(ranking['name']!),
-                      subtitle: Text('Rank: ${ranking['rank']}'),
+                      title: Text(ranking['name']),
+                      subtitle: Text(
+                          'Won: ${ranking['won']}, Lost: ${ranking['lost']}'),
                     ),
                   );
                 },
@@ -124,18 +144,6 @@ class _RankingsPageState extends State<RankingsPage> {
                       const Text('Next', style: TextStyle(color: Colors.white)),
                 ),
               ],
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => sl<NavigationService>().navigateTo('/profile'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                textStyle: const TextStyle(fontSize: 18),
-              ),
-              child: const Text('Go to Profile',
-                  style: TextStyle(color: Colors.white)),
             ),
           ],
         ),

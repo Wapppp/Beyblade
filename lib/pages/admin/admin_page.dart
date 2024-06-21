@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'user_management_page.dart';
+import 'user_management_page.dart'; // Import the new file
 import 'club_management.dart';
 import 'tournaments_manage_page.dart';
 import 'manage_rankings.dart'; // Import the new file
@@ -17,9 +17,7 @@ class AdminPage extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -91,7 +89,8 @@ class AdminPage extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  title: Text('Manage Tournaments', style: TextStyle(fontSize: 18)),
+                  title: Text('Manage Tournaments',
+                      style: TextStyle(fontSize: 18)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
@@ -115,7 +114,8 @@ class AdminPage extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  title: Text('Manage Rankings', style: TextStyle(fontSize: 18)),
+                  title:
+                      Text('Manage Rankings', style: TextStyle(fontSize: 18)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
