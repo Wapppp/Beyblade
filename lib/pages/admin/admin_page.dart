@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'user_management_page.dart'; // Import the new file
-import 'club_management.dart'; // Import the new file
+import 'user_management_page.dart';
+import 'club_management.dart';
+import 'tournaments_manage_page.dart';
+import 'manage_rankings.dart'; // Import the new file
 
 class AdminPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -89,14 +91,13 @@ class AdminPage extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  title: Text('Manage Tournaments',
-                      style: TextStyle(fontSize: 18)),
+                  title: Text('Manage Tournaments', style: TextStyle(fontSize: 18)),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => TournamentManagementPage(),
+                        builder: (context) => TournamentsManagePage(),
                       ),
                     );
                   },
@@ -109,6 +110,18 @@ class AdminPage extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ClubManagementPage(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  title: Text('Manage Rankings', style: TextStyle(fontSize: 18)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ManageRankingsPage(),
                       ),
                     );
                   },
@@ -146,20 +159,6 @@ class ContentManagementPage extends StatelessWidget {
       ),
       body: Center(
         child: Text('Content Management Content Here'),
-      ),
-    );
-  }
-}
-
-class TournamentManagementPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Tournament Management'),
-      ),
-      body: Center(
-        child: Text('Tournament Management Content Here'),
       ),
     );
   }
