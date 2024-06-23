@@ -22,59 +22,12 @@ class JoinClubPage extends StatelessWidget {
         }
 
         if (snapshot.hasData && snapshot.data != null) {
-          return _checkOrganizerAndBuildPage(context, snapshot.data!);
+          return _buildJoinClubPage(context, snapshot.data!);
         } else {
           return LoginPage();
         }
       },
     );
-  }
-
-  Widget _checkOrganizerAndBuildPage(BuildContext context, User user) {
-    return FutureBuilder<bool>(
-      future: _isUserOrganizer(user.uid),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text('Join a Club'),
-            ),
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-
-        if (snapshot.hasError || !snapshot.hasData || snapshot.data == true) {
-          // Handle error or user is an organizer
-          return Scaffold(
-            appBar: AppBar(
-              title: Text('Join a Club'),
-            ),
-            body: Center(
-              child: Text('Organizers cannot join or view clubs.'),
-            ),
-          );
-        }
-
-        // User is not an organizer, build the join club page
-        return _buildJoinClubPage(context, user);
-      },
-    );
-  }
-
-  Future<bool> _isUserOrganizer(String userId) async {
-    try {
-      var docSnapshot = await FirebaseFirestore.instance
-          .collection('organizers')
-          .doc(userId)
-          .get();
-
-      return docSnapshot.exists;
-    } catch (e) {
-      print('Error checking organizer status: $e');
-      return false; // Return false on error or if not an organizer
-    }
   }
 
   Widget _buildJoinClubPage(BuildContext context, User user) {
@@ -111,31 +64,35 @@ class JoinClubPage extends StatelessWidget {
                 title: Text(clubData['name'] ?? 'Club Name Missing'),
                 subtitle:
                     Text('Leader: ${clubData['leader_name'] ?? 'Unknown'}'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ClubDetailPage(
-                        clubSnapshot: clubSnapshot,
-                        userId: user.uid,
-                      ),
-                    ),
-                  );
-                },
-                trailing: ElevatedButton(
-                  onPressed: isMember
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ClubDetailPage(
-                                clubSnapshot: clubSnapshot,
-                                userId: user.uid,
-                              ),
+                onTap: isMember
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ClubDetailPage(
+                              clubSnapshot: clubSnapshot,
+                              userId: user.uid,
                             ),
-                          );
-                        }
-                      : null, // Disable button for non-members
+                          ),
+                        );
+                      }
+                    : null,
+                trailing: ElevatedButton(
+                  onPressed: () {
+                    if (isMember) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ClubDetailPage(
+                            clubSnapshot: clubSnapshot,
+                            userId: user.uid,
+                          ),
+                        ),
+                      );
+                    } else {
+                      _joinClub(context, user.uid, clubId);
+                    }
+                  },
                   child: Text(isMember ? 'View' : 'Join'),
                 ),
               );
@@ -143,6 +100,16 @@ class JoinClubPage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Future<void> _joinClub(
+      BuildContext context, String userId, String clubId) async {
+    await FirebaseFirestore.instance.collection('clubs').doc(clubId).update({
+      'members': FieldValue.arrayUnion([userId])
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Joined club successfully')),
     );
   }
 }

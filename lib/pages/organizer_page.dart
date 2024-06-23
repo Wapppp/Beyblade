@@ -4,6 +4,9 @@ import 'create_event_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'tournament_details_screen.dart';
 import 'organizer_profile_screen.dart';
+import 'bracket_management_page.dart'; // Import the BracketManagementPage
+import 'create_bracket_screen.dart'; // Import the CreateBracketScreen
+import 'manage_bracket_page.dart'; // Import the BracketManagementPage
 
 class OrganizerPage extends StatefulWidget {
   @override
@@ -165,6 +168,23 @@ class _OrganizerPageState extends State<OrganizerPage> {
         return ListTile(
           title: Text(doc['name']),
           subtitle: Text('Organizer: $organizerName'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(Icons.format_list_bulleted), // Updated icon
+                onPressed: () {
+                  _navigateToBracketManagementPage(doc.id);
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.manage_search),
+                onPressed: () {
+                  _navigateToManageBracketPage(doc.id);
+                },
+              ),
+            ],
+          ),
           onTap: () {
             _navigateToDetailsScreen(doc);
           },
@@ -219,6 +239,24 @@ class _OrganizerPageState extends State<OrganizerPage> {
       context,
       MaterialPageRoute(
         builder: (context) => OrganizerProfileScreen(userId: user!.uid),
+      ),
+    );
+  }
+
+  void _navigateToBracketManagementPage(String tournamentId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BracketManagementPage(tournamentId: tournamentId),
+      ),
+    );
+  }
+
+  void _navigateToManageBracketPage(String tournamentId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ManageBracketPage(tournamentId: tournamentId),
       ),
     );
   }
