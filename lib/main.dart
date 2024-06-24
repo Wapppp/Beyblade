@@ -69,7 +69,7 @@ class MyApp extends StatelessWidget {
           '/join_club': (context) => JoinClubPage(),
           '/club': (context) => JoinClubPage(),
           '/create_club': (context) => CreateClubPage(),
-          '/rankings': (context) => RankingsPage(),
+          '/rankings': (context) => RankingPage(),
           '/tournaments': (context) => TournamentsPage(),
           '/admin': (context) => AdminLoginPage(),
           '/admin_page': (context) => AdminPage(),

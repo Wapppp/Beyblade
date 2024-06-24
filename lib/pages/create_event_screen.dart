@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class TournamentEvent {
   final String name;
   final DateTime dateAndTime; // Changed to DateTime for combined date and time
+  final Duration duration; // New field for tournament duration
   final String location;
   final String description;
   final String organizerId;
@@ -10,10 +11,26 @@ class TournamentEvent {
   TournamentEvent({
     required this.name,
     required this.dateAndTime,
+    required this.duration,
     required this.location,
     required this.description,
     required this.organizerId,
   });
+
+  String getStatus() {
+    final now = DateTime.now();
+    final tournamentEnd = dateAndTime.add(duration);
+
+    if (dateAndTime.isAfter(now)) {
+      return 'Upcoming';
+    } else if (dateAndTime.isBefore(now) && tournamentEnd.isAfter(now)) {
+      return 'Ongoing';
+    } else if (tournamentEnd.isBefore(now)) {
+      return 'Ended';
+    } else {
+      return 'Started';
+    }
+  }
 }
 
 class CreateEventScreen extends StatefulWidget {
@@ -33,6 +50,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final TextEditingController nameController = TextEditingController();
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay.now();
+  Duration selectedDuration = Duration(hours: 2);
   final TextEditingController locationController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
 
@@ -54,6 +72,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             ),
             SizedBox(height: 12),
             _buildDateTimePicker(),
+            SizedBox(height: 12),
+            _buildDurationPicker(),
             SizedBox(height: 12),
             TextField(
               controller: locationController,
@@ -83,6 +103,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     selectedTime.hour,
                     selectedTime.minute,
                   ),
+                  duration: selectedDuration,
                   location: locationController.text,
                   description: descriptionController.text,
                   organizerId: widget.organizerId,
@@ -98,10 +119,33 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               ),
               child: Text('Create Tournament', style: TextStyle(fontSize: 16)),
             ),
+            SizedBox(height: 20),
+            Text(
+              'Status: ${_getEventStatus()}',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  String _getEventStatus() {
+    TournamentEvent event = TournamentEvent(
+      name: nameController.text,
+      dateAndTime: DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      ),
+      duration: selectedDuration,
+      location: locationController.text,
+      description: descriptionController.text,
+      organizerId: widget.organizerId,
+    );
+    return event.getStatus();
   }
 
   Widget _buildDateTimePicker() {
@@ -150,6 +194,37 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     );
   }
 
+  Widget _buildDurationPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Duration',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => _selectDuration(context),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Duration (hours)',
+                    border: OutlineInputBorder(),
+                  ),
+                  child: Text(
+                    '${selectedDuration.inHours} hours',
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -172,6 +247,37 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (picked != null && picked != selectedTime) {
       setState(() {
         selectedTime = picked;
+      });
+    }
+  }
+
+  Future<void> _selectDuration(BuildContext context) async {
+    final Duration? picked = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text('Select Duration'),
+          children: [
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, Duration(hours: 1)),
+              child: Text('1 hour'),
+            ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, Duration(hours: 2)),
+              child: Text('2 hours'),
+            ),
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, Duration(hours: 3)),
+              child: Text('3 hours'),
+            ),
+            // Add more options as needed
+          ],
+        );
+      },
+    );
+    if (picked != null && picked != selectedDuration) {
+      setState(() {
+        selectedDuration = picked;
       });
     }
   }

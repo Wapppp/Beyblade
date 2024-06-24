@@ -1,72 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class RankingsPage extends StatefulWidget {
+class RankingPage extends StatefulWidget {
   @override
-  _RankingsPageState createState() => _RankingsPageState();
+  _RankingPageState createState() => _RankingPageState();
 }
 
-class _RankingsPageState extends State<RankingsPage> {
+class _RankingPageState extends State<RankingPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late List<Map<String, dynamic>> _rankings;
-  int _currentPage = 0;
-  final int _itemsPerPage = 5;
+  late List<Map<String, dynamic>> players = [];
 
   @override
   void initState() {
     super.initState();
-    _rankings = [];
-    _fetchRankings();
+    _fetchTopPlayers();
   }
 
-  void _fetchRankings() async {
+  Future<void> _fetchTopPlayers() async {
     try {
-      QuerySnapshot snapshot = await _firestore.collection('users').get();
-      List<Map<String, dynamic>> users = snapshot.docs.map((doc) {
-        return {
-          'name': doc['blader_name'] ?? 'No Name',
-          'won': doc['won'] ?? 0,
-          'lost': doc['lost'] ?? 0,
-        };
-      }).toList();
-
-      // Sort users by 'won' descending and 'lost' ascending
-      users.sort((a, b) {
-        if (a['won'] != b['won']) {
-          return b['won'].compareTo(a['won']); // Sort by won descending
-        } else {
-          return a['lost'].compareTo(
-              b['lost']); // If won is the same, sort by lost ascending
-        }
-      });
+      final QuerySnapshot playerStatsSnapshot = await _firestore
+          .collection('playerstats')
+          .orderBy('total_wins', descending: true)
+          .limit(100)
+          .get();
 
       setState(() {
-        _rankings = users;
+        players = playerStatsSnapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .toList();
       });
     } catch (e) {
-      print('Error fetching rankings: $e');
-    }
-  }
-
-  List<Map<String, dynamic>> _getPaginatedRankings() {
-    final start = _currentPage * _itemsPerPage;
-    final end = (start + _itemsPerPage).clamp(0, _rankings.length);
-    return _rankings.sublist(start, end);
-  }
-
-  void _nextPage() {
-    if ((_currentPage + 1) * _itemsPerPage < _rankings.length) {
-      setState(() {
-        _currentPage++;
-      });
-    }
-  }
-
-  void _previousPage() {
-    if (_currentPage > 0) {
-      setState(() {
-        _currentPage--;
-      });
+      print('Error fetching top players: $e');
     }
   }
 
@@ -74,6 +38,7 @@ class _RankingsPageState extends State<RankingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+<<<<<<< HEAD
         title: const Text('Rankings'),
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -90,90 +55,68 @@ class _RankingsPageState extends State<RankingsPage> {
             Navigator.pop(context);
           },
         ),
+=======
+        title: Text('Top 100 Players'),
+>>>>>>> 7adfd8d59a2b476e59ceca7caba4d2eb7b2c62a2
       ),
-      body: Padding(
+      body: players.isEmpty
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: players.length,
+              itemBuilder: (context, index) {
+                var player = players[index];
+                return _buildPlayerCard(index + 1, player);
+              },
+            ),
+    );
+  }
+
+  Widget _buildPlayerCard(int rank, Map<String, dynamic> player) {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: <Widget>[
-            const Text(
-              'Top Bladers',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
             Expanded(
-              child: ListView.builder(
-                itemCount: _getPaginatedRankings().length,
-                itemBuilder: (context, index) {
-                  final ranking = _getPaginatedRankings()[index];
-                  return Card(
-                    elevation: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    color: Colors.grey[850], // Dark grey card background color
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        child: Text((index + 1).toString()),
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                      ),
-                      title: Text(
-                        ranking['name'],
-                        style: TextStyle(
-                          color: Colors.white, // White text color
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Won: ${ranking['won']}, Lost: ${ranking['lost']}',
-                        style: TextStyle(
-                          color: Colors.white70, // White70 text color
-                        ),
-                      ),
-                    ),
-                  );
-                },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$rank. ${player['blader_name']}',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'MMR: ${_calculateMMR(player['total_wins'], player['total_losses'], player['total_points'])}',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'As of: ${_formatDate(player['last_updated'])}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                  ),
+                ],
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ElevatedButton(
-                  onPressed: _previousPage,
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        Colors.black), // Background color
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        Colors.white), // Text color
-                    padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    ),
-                  ),
-                  child: const Text('Previous'),
-                ),
-                ElevatedButton(
-                  onPressed: _nextPage,
-                  style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        Colors.black), // Background color
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        Colors.white), // Text color
-                    padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    ),
-                  ),
-                  child: const Text('Next'),
-                ),
-              ],
-            ),
+            Icon(Icons.star, color: Colors.amber),
           ],
         ),
       ),
     );
+  }
+
+  int _calculateMMR(int totalWins, int totalLosses, int totalPoints) {
+    // Your MMR calculation logic here
+    // Example: This is a simple example, adjust based on your specific formula
+    return totalWins * 3 + totalLosses * 1 + totalPoints * 2;
+  }
+
+  String _formatDate(Timestamp timestamp) {
+    var date =
+        DateTime.fromMillisecondsSinceEpoch(timestamp.millisecondsSinceEpoch);
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

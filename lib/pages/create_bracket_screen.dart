@@ -26,6 +26,13 @@ class _CreateBracketScreenState extends State<CreateBracketScreen> {
 
   Future<void> _createBracket() async {
     try {
+      if (players.length < 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Minimum 2 players required')),
+        );
+        return;
+      }
+
       List<String> shuffledPlayers = List.from(players)..shuffle(Random());
 
       Map<String, dynamic> matches = {};
@@ -41,8 +48,8 @@ class _CreateBracketScreenState extends State<CreateBracketScreen> {
           .collection('tournaments')
           .doc(widget.tournamentId)
           .update({
-        'matches': matches,
-        'format': selectedFormat,
+        'bracket': matches,
+        'type': selectedFormat,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -65,6 +72,7 @@ class _CreateBracketScreenState extends State<CreateBracketScreen> {
       matches['Match $matchNumber'] = {
         'player1': players[i],
         'player2': players.length > i + 1 ? players[i + 1] : 'Bye',
+        'winner': '',
       };
       matchNumber++;
     }
@@ -209,5 +217,11 @@ class _CreateBracketScreenState extends State<CreateBracketScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _playerNameController.dispose();
+    super.dispose();
   }
 }
