@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'manage_participants_page.dart'; // Import the ManageParticipantsPage
 
 class TournamentDetailsScreen extends StatelessWidget {
   final DocumentSnapshot tournamentDoc;
@@ -68,10 +69,66 @@ class TournamentDetailsScreen extends StatelessWidget {
                   'Description: ${tournamentDoc['description']}',
                   style: TextStyle(fontSize: 16),
                 ),
+                SizedBox(height: 20),
+                Text(
+                  'Participants:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('participants')
+                        .where('tournament_id', isEqualTo: tournamentDoc.id)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return Center(child: Text('No participants yet.'));
+                      }
+
+                      final participants = snapshot.data!.docs;
+
+                      return ListView.builder(
+                        itemCount: participants.length,
+                        itemBuilder: (context, index) {
+                          var participantData = participants[index].data()
+                              as Map<String, dynamic>;
+                          return ListTile(
+                            title: Text(
+                                participantData['blader_name'] ?? 'Unknown'),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    _navigateToManageParticipants(context);
+                  },
+                  child: Text('Manage Participants'),
+                ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _navigateToManageParticipants(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            ManageParticipantsPage(tournamentDoc: tournamentDoc),
       ),
     );
   }

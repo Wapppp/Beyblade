@@ -7,6 +7,7 @@ import 'organizer_profile_screen.dart';
 import 'bracket_management_page.dart'; // Import the BracketManagementPage
 import 'create_bracket_screen.dart'; // Import the CreateBracketScreen
 import 'manage_bracket_page.dart'; // Import the BracketManagementPage
+import 'tournaments_screen.dart'; // Import the TournamentsScreen
 
 class OrganizerPage extends StatefulWidget {
   @override
@@ -63,9 +64,12 @@ class _OrganizerPageState extends State<OrganizerPage> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
-            _buildOrganizerTournaments(user!.uid),
+            ElevatedButton(
+              onPressed: _navigateToTournamentsScreen,
+              child: Text('View All Tournaments'),
+            ),
             SizedBox(height: 20),
-            _buildAllTournaments(),
+            _buildOrganizerTournaments(user!.uid),
           ],
         ),
       ),
@@ -87,43 +91,6 @@ class _OrganizerPageState extends State<OrganizerPage> {
                 .collection('tournaments')
                 .where('organizerId', isEqualTo: organizerId)
                 .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Center(child: Text('No tournaments available'));
-              }
-
-              return Expanded(
-                child: ListView(
-                  children: snapshot.data!.docs.map((doc) {
-                    return _buildTournamentTile(doc);
-                  }).toList(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAllTournaments() {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'All Tournaments:',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 10),
-          StreamBuilder<QuerySnapshot>(
-            stream: _firestore.collection('tournaments').snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(child: CircularProgressIndicator());
@@ -257,6 +224,15 @@ class _OrganizerPageState extends State<OrganizerPage> {
       context,
       MaterialPageRoute(
         builder: (context) => ManageBracketPage(tournamentId: tournamentId),
+      ),
+    );
+  }
+
+  void _navigateToTournamentsScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TournamentsScreen(),
       ),
     );
   }
