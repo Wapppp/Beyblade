@@ -31,11 +31,18 @@ class _HomePageState extends State<HomePage> {
   User? _user;
   String _bladerName = '';
   String _profilePictureUrl = '';
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadCurrentUser();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _loadCurrentUser() async {
@@ -68,10 +75,22 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Colors.grey[900],
       appBar: AppBar(
-        title: Text('BeybladeX'),
+        title: Text(
+          'BeybladeX',
+          style: TextStyle(color: Colors.grey[300]),
+        ),
         actions: _buildAppBarActions(),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -81,7 +100,11 @@ class _HomePageState extends State<HomePage> {
           children: <Widget>[
             Text(
               'Welcome to the Beyblade Community!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[200],
+              ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 20),
@@ -99,8 +122,9 @@ class _HomePageState extends State<HomePage> {
           _buildBottomNavigationBarItem(Icons.people, 'Club'),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Colors.orange,
         unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.grey[850],
         onTap: _handleNavigation,
       ),
     );
@@ -121,11 +145,11 @@ class _HomePageState extends State<HomePage> {
         SizedBox(width: 8),
         Text(
           _bladerName,
-          style: TextStyle(fontSize: 16),
+          style: TextStyle(fontSize: 16, color: Colors.grey[300]),
         ),
         SizedBox(width: 8),
         PopupMenuButton<String>(
-          icon: Icon(Icons.arrow_drop_down),
+          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[300]),
           onSelected: (value) {
             if (value == 'profile') {
               _navigateToProfile();
@@ -154,13 +178,13 @@ class _HomePageState extends State<HomePage> {
     } else {
       return [
         IconButton(
-          icon: Icon(Icons.login),
+          icon: Icon(Icons.login, color: Colors.grey[300]),
           onPressed: () {
             sl<NavigationService>().navigateTo('/login');
           },
         ),
         IconButton(
-          icon: Icon(Icons.app_registration),
+          icon: Icon(Icons.app_registration, color: Colors.grey[300]),
           onPressed: () {
             sl<NavigationService>().navigateTo('/register');
           },
@@ -217,6 +241,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildTournamentsCard() {
     return Card(
+      color: Colors.grey[850],
       elevation: 8,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -231,7 +256,7 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: Colors.grey[200],
               ),
             ),
             SizedBox(height: 16),
@@ -265,37 +290,54 @@ class _HomePageState extends State<HomePage> {
                     );
                   }).toList();
 
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: [
-                        DataColumn(
-                          label: Text('Name',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        DataColumn(
-                          label: Text('Date',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        DataColumn(
-                          label: Text('Location',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        DataColumn(
-                          label: Text('Description',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                      rows: events
-                          .map((event) => DataRow(
-                                cells: [
-                                  DataCell(Text(event.name)),
-                                  DataCell(Text(_formatTimestamp(event.date))),
-                                  DataCell(Text(event.location)),
-                                  DataCell(Text(event.description)),
-                                ],
-                              ))
-                          .toList(),
+                  return Scrollbar(
+                    thumbVisibility: true,
+                    controller: _scrollController,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      controller: _scrollController,
+                      child: DataTable(
+                        columns: [
+                          DataColumn(
+                            label: Text('Name',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                          ),
+                          DataColumn(
+                            label: Text('Date',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                          ),
+                          DataColumn(
+                            label: Text('Location',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                          ),
+                          DataColumn(
+                            label: Text('Description',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                          ),
+                        ],
+                        rows: events
+                            .map((event) => DataRow(
+                                  cells: [
+                                    DataCell(Text(event.name,
+                                        style: TextStyle(color: Colors.white))),
+                                    DataCell(Text(_formatTimestamp(event.date),
+                                        style: TextStyle(color: Colors.white))),
+                                    DataCell(Text(event.location,
+                                        style: TextStyle(color: Colors.white))),
+                                    DataCell(Text(event.description,
+                                        style: TextStyle(color: Colors.white))),
+                                  ],
+                                ))
+                            .toList(),
+                      ),
                     ),
                   );
                 },

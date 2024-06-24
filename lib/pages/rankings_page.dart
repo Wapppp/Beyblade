@@ -74,8 +74,16 @@ class _RankingsPageState extends State<RankingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rankings', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black,
+        title: const Text('Rankings'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -104,15 +112,29 @@ class _RankingsPageState extends State<RankingsPage> {
                   return Card(
                     elevation: 4,
                     margin: const EdgeInsets.symmetric(vertical: 10),
+                    color: Colors.grey[850], // Dark grey card background color
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: ListTile(
                       leading: CircleAvatar(
                         child: Text((index + 1).toString()),
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
                       ),
-                      title: Text(ranking['name']),
+                      title: Text(
+                        ranking['name'],
+                        style: TextStyle(
+                          color: Colors.white, // White text color
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       subtitle: Text(
-                          'Won: ${ranking['won']}, Lost: ${ranking['lost']}'),
+                        'Won: ${ranking['won']}, Lost: ${ranking['lost']}',
+                        style: TextStyle(
+                          color: Colors.white70, // White70 text color
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -123,25 +145,29 @@ class _RankingsPageState extends State<RankingsPage> {
               children: [
                 ElevatedButton(
                   onPressed: _previousPage,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    textStyle: const TextStyle(fontSize: 18),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(
+                        Colors.black), // Background color
+                    foregroundColor: MaterialStateProperty.all<Color>(
+                        Colors.white), // Text color
+                    padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    ),
                   ),
-                  child: const Text('Previous',
-                      style: TextStyle(color: Colors.white)),
+                  child: const Text('Previous'),
                 ),
                 ElevatedButton(
                   onPressed: _nextPage,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    textStyle: const TextStyle(fontSize: 18),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(
+                        Colors.black), // Background color
+                    foregroundColor: MaterialStateProperty.all<Color>(
+                        Colors.white), // Text color
+                    padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    ),
                   ),
-                  child:
-                      const Text('Next', style: TextStyle(color: Colors.white)),
+                  child: const Text('Next'),
                 ),
               ],
             ),

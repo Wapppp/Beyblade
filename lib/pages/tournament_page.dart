@@ -8,6 +8,15 @@ class TournamentsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Tournaments'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -23,7 +32,10 @@ class TournamentsPage extends StatelessWidget {
             return Center(
               child: Text(
                 'No tournaments available',
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[200], // White text color
+                ),
               ),
             );
           }
@@ -44,20 +56,42 @@ class TournamentsPage extends StatelessWidget {
             itemCount: tournaments.length,
             itemBuilder: (context, index) {
               final tournament = tournaments[index];
-              return ListTile(
-                title: Text(tournament.name),
-                subtitle:
-                    Text(_formatTimestamp(tournament.date)), // Format Timestamp
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TournamentDetailsPage(
-                        tournament: tournament, // Pass tournament object
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                child: Card(
+                  elevation: 4,
+                  color: Colors.grey[850], // Dark grey card background color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.all(12),
+                    title: Text(
+                      tournament.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white, // White text color
                       ),
                     ),
-                  );
-                },
+                    subtitle: Text(
+                      _formatTimestamp(tournament.date),
+                      style: TextStyle(
+                        color: Colors.white70, // White70 text color
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TournamentDetailsPage(
+                            tournament: tournament, // Pass tournament object
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               );
             },
           );

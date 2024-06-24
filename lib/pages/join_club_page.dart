@@ -14,6 +14,15 @@ class JoinClubPage extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(
               title: Text('Join a Club'),
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.orange, Colors.black],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
             ),
             body: Center(
               child: CircularProgressIndicator(),
@@ -34,6 +43,15 @@ class JoinClubPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Join a Club'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('clubs').snapshots(),
@@ -60,12 +78,47 @@ class JoinClubPage extends StatelessWidget {
               List<dynamic> members = clubData['members'] ?? [];
               bool isMember = members.contains(user.uid);
 
-              return ListTile(
-                title: Text(clubData['name'] ?? 'Club Name Missing'),
-                subtitle:
-                    Text('Leader: ${clubData['leader_name'] ?? 'Unknown'}'),
-                onTap: isMember
-                    ? () {
+              return Card(
+                elevation: 4,
+                color: Colors.grey[850], // Dark grey background
+                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  title: Text(
+                    clubData['name'] ?? 'Club Name Missing',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white, // White text color
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Leader: ${clubData['leader_name'] ?? 'Unknown'}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70, // Light grey text color
+                    ),
+                  ),
+                  onTap: isMember
+                      ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ClubDetailPage(
+                                clubSnapshot: clubSnapshot,
+                                userId: user.uid,
+                              ),
+                            ),
+                          );
+                        }
+                      : null,
+                  trailing: ElevatedButton(
+                    onPressed: () {
+                      if (isMember) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -75,25 +128,23 @@ class JoinClubPage extends StatelessWidget {
                             ),
                           ),
                         );
+                      } else {
+                        _joinClub(context, user.uid, clubId);
                       }
-                    : null,
-                trailing: ElevatedButton(
-                  onPressed: () {
-                    if (isMember) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ClubDetailPage(
-                            clubSnapshot: clubSnapshot,
-                            userId: user.uid,
-                          ),
+                    },
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(
+                          Colors.black), // Orange button background
+                      foregroundColor: MaterialStateProperty.all<Color>(
+                          Colors.white), // White button text
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      );
-                    } else {
-                      _joinClub(context, user.uid, clubId);
-                    }
-                  },
-                  child: Text(isMember ? 'View' : 'Join'),
+                      ),
+                    ),
+                    child: Text(isMember ? 'View' : 'Join'),
+                  ),
                 ),
               );
             },

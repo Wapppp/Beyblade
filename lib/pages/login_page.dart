@@ -13,6 +13,8 @@ class _LoginPageState extends State<LoginPage> {
   final GoogleSignIn googleSignIn = GoogleSignIn();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
 
   Future<void> _signInWithGoogle() async {
     try {
@@ -36,6 +38,10 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       print('Error signing in with Google: $e');
+      setState(() {
+        _errorMessage =
+            'Failed to sign in with Google. Please try again later.';
+      });
     }
   }
 
@@ -84,68 +90,251 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       print('Error fetching user data: $e');
+      setState(() {
+        _errorMessage = 'Failed to fetch user data. Please try again later.';
+      });
     }
+  }
+
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      _handleLogin(userCredential.user!);
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: $e');
+      setState(() {
+        _isLoading = false;
+        _errorMessage = _handleAuthError(e.code);
+      });
+    } catch (e) {
+      print('Error: $e');
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Failed to sign in. Please try again later.';
+      });
+    }
+  }
+
+  String _handleAuthError(String errorCode) {
+    switch (errorCode) {
+      case 'user-not-found':
+        return 'No user found with this email.';
+      case 'wrong-password':
+        return 'Incorrect password provided.';
+      case 'network-request-failed':
+        return 'Network error occurred. Please check your internet connection.';
+      default:
+        return 'Authentication error occurred. Please try again later.';
+    }
+  }
+
+  void _navigateToRegistration() {
+    Navigator.pushNamed(context, '/register');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: Text(
+          'Login',
+          style: TextStyle(color: Colors.grey[300]),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(labelText: 'Email'),
+      body: Container(
+        color: Colors.grey[900],
+        child: Center(
+          child: Card(
+            color: Colors.grey[850],
+            margin: EdgeInsets.symmetric(horizontal: 20),
+            elevation: 8.0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Login',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[200],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      labelStyle: TextStyle(color: Colors.grey[200]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      labelStyle: TextStyle(color: Colors.grey[200]),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                    ),
+                    obscureText: true,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  SizedBox(height: 20),
+                  _isLoading
+                      ? CircularProgressIndicator()
+                      : ElevatedButton(
+                          onPressed: _login,
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(
+                                Colors.orange), // Background color
+                            shape: MaterialStateProperty.all<OutlinedBorder>(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            padding: MaterialStateProperty.all<EdgeInsets>(
+                                EdgeInsets.symmetric(horizontal: 0)),
+                            elevation: MaterialStateProperty.all<double>(5),
+                          ),
+                          child: Ink(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.orange, Colors.black],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Container(
+                              constraints: BoxConstraints(
+                                maxWidth: double.infinity,
+                                minHeight: 50.0,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Login',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                  SizedBox(height: 10), // Adjust spacing
+                  ElevatedButton(
+                    onPressed: _signInWithGoogle,
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(
+                          Colors.red), // Example color
+                      shape: MaterialStateProperty.all<OutlinedBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      padding: MaterialStateProperty.all<EdgeInsets>(
+                          EdgeInsets.symmetric(horizontal: 0)),
+                      elevation: MaterialStateProperty.all<double>(5),
+                    ),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.red, Colors.black],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: double.infinity,
+                          minHeight: 50.0,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Login with Google',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  TextButton(
+                    onPressed: _navigateToRegistration,
+                    child: Text(
+                      'Create an account',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  if (_errorMessage != null)
+                    Padding(
+                      padding: EdgeInsets.only(top: 20),
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                ],
               ),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(labelText: 'Password'),
-                obscureText: true,
-              ),
-              SizedBox(height: 20.0),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final UserCredential userCredential =
-                        await _auth.signInWithEmailAndPassword(
-                      email: _emailController.text.trim(),
-                      password: _passwordController.text.trim(),
-                    );
-                    if (userCredential.user != null) {
-                      _handleLogin(userCredential.user!);
-                    }
-                  } on FirebaseAuthException catch (e) {
-                    print('FirebaseAuthException: $e');
-                    // Handle FirebaseAuthException here
-                  } catch (e) {
-                    print('Error: $e');
-                    // Handle other errors here
-                  }
-                },
-                child: Text('Login'),
-              ),
-              SizedBox(height: 10.0), // Adjust spacing
-              ElevatedButton(
-                onPressed: _signInWithGoogle,
-                child: Text('Login with Google'),
-              ),
-              SizedBox(height: 20.0),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/register');
-                },
-                child: Text('Create an account'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }

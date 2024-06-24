@@ -40,93 +40,120 @@ class AdminPage extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text('Admin Panel'),
+            title:
+                Text('Admin Panel', style: TextStyle(color: Colors.grey[300])),
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.orange, Colors.black],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
           ),
           drawer: Drawer(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: <Widget>[
-                DrawerHeader(
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                  ),
-                  child: Text(
-                    'Admin Menu',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
+            child: Container(
+              color: Colors.grey[850], // Dark grey background
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  DrawerHeader(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.orange, Colors.black],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Text(
+                      'Admin Menu',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                      ),
                     ),
                   ),
-                ),
-                ListTile(
-                  title: Text('Dashboard', style: TextStyle(fontSize: 18)),
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  title: Text('Manage Users', style: TextStyle(fontSize: 18)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => UserManagementPage(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  title: Text('Manage Content', style: TextStyle(fontSize: 18)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ContentManagementPage(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  title: Text('Manage Tournaments',
-                      style: TextStyle(fontSize: 18)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TournamentsManagePage(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  title: Text('Manage Clubs', style: TextStyle(fontSize: 18)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ClubManagementPage(),
-                      ),
-                    );
-                  },
-                ),
-                ListTile(
-                  title:
-                      Text('Manage Rankings', style: TextStyle(fontSize: 18)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ManageRankingsPage(),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                  ListTile(
+                    title: Text('Dashboard',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    tileColor: Colors.grey[850],
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  ListTile(
+                    title: Text('Manage Users',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    tileColor: Colors.grey[850],
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => UserManagementPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    title: Text('Manage Content',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    tileColor: Colors.grey[850],
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ContentManagementPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    title: Text('Manage Tournaments',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    tileColor: Colors.grey[850],
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TournamentsManagePage(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    title: Text('Manage Clubs',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    tileColor: Colors.grey[850],
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ClubManagementPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    title: Text('Manage Rankings',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    tileColor: Colors.grey[850],
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManageRankingsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           body: Container(
@@ -155,10 +182,26 @@ class ContentManagementPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Content Management'),
+        title: Text('Content Management',
+            style: TextStyle(color: Colors.grey[300])),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-      body: Center(
-        child: Text('Content Management Content Here'),
+      body: Container(
+        color: Colors.grey[900],
+        child: Center(
+          child: Text(
+            'Content Management Content Here',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
       ),
     );
   }
