@@ -47,6 +47,10 @@ class _RegisterPageState extends State<RegisterPage> {
     Navigator.pushReplacementNamed(context, '/profile');
   }
 
+  void _navigateToOrganizerRegistration() {
+    Navigator.pushNamed(context, '/register_organizer');
+  }
+
   Future<void> _register() async {
     setState(() {
       _isLoading = true;
@@ -111,184 +115,219 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ),
-      body: Container(
-        color: Colors.grey[900], // Background color
-        child: Center(
-          child: Card(
-            color: Colors.grey[850], // Card color
-            margin: EdgeInsets.symmetric(horizontal: 20),
-            elevation: 8.0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      'Create an Account',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[200],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    TextField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Blader Name',
-                        labelStyle: TextStyle(color: Colors.grey[200]),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(10.0),
+      body: Stack(
+        children: [
+          Container(
+            color: Colors.grey[900], // Background color
+            child: Center(
+              child: Card(
+                color: Colors.grey[850], // Card color
+                margin: EdgeInsets.symmetric(horizontal: 20),
+                elevation: 8.0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          'Create an Account',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[200],
+                          ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                      ),
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    SizedBox(height: 20),
-                    TextField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        labelStyle: TextStyle(color: Colors.grey[200]),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    SizedBox(height: 20),
-                    TextField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        labelStyle: TextStyle(color: Colors.grey[200]),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                      ),
-                      obscureText: true,
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    SizedBox(height: 20),
-                    _isLoading
-                        ? CircularProgressIndicator()
-                        : ElevatedButton(
-                            onPressed: _register,
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(
-                                Colors.orange, // Button color
-                              ),
-                              shape: MaterialStateProperty.all<
-                                  RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                ),
-                              ),
-                              padding: MaterialStateProperty.all<EdgeInsets>(
-                                EdgeInsets.symmetric(horizontal: 0),
-                              ),
-                              elevation: MaterialStateProperty.all<double>(5),
+                        SizedBox(height: 20),
+                        TextField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Blader Name',
+                            labelStyle: TextStyle(color: Colors.grey[200]),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(10.0),
                             ),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [Colors.orange, Colors.black],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                          ),
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        SizedBox(height: 20),
+                        TextField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            labelStyle: TextStyle(color: Colors.grey[200]),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        SizedBox(height: 20),
+                        TextField(
+                          controller: _passwordController,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            labelStyle: TextStyle(color: Colors.grey[200]),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                          ),
+                          obscureText: true,
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        SizedBox(height: 20),
+                        _isLoading
+                            ? CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: _register,
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                    Colors.orange, // Button color
+                                  ),
+                                  shape: MaterialStateProperty.all<
+                                      RoundedRectangleBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                    ),
+                                  ),
+                                  padding:
+                                      MaterialStateProperty.all<EdgeInsets>(
+                                    EdgeInsets.symmetric(horizontal: 0),
+                                  ),
+                                  elevation:
+                                      MaterialStateProperty.all<double>(5),
                                 ),
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              child: Container(
-                                constraints: BoxConstraints(
-                                  maxWidth: double.infinity,
-                                  minHeight: 50.0,
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Register',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
+                                child: Ink(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [Colors.orange, Colors.black],
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  child: Container(
+                                    constraints: BoxConstraints(
+                                      maxWidth: double.infinity,
+                                      minHeight: 50.0,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Register',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
+                        SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: _signInWithGoogle,
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.all<Color>(Colors.red),
+                            shape: MaterialStateProperty.all<OutlinedBorder>(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                            padding: MaterialStateProperty.all<EdgeInsets>(
+                              EdgeInsets.symmetric(horizontal: 0),
+                            ),
+                            elevation: MaterialStateProperty.all<double>(5),
+                          ),
+                          child: Ink(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.red, Colors.black],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Container(
+                              constraints: BoxConstraints(
+                                maxWidth: double.infinity,
+                                minHeight: 50.0,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Register with Google',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
                           ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _signInWithGoogle,
-                      style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.all<Color>(Colors.red),
-                        shape: MaterialStateProperty.all<OutlinedBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
                         ),
-                        padding: MaterialStateProperty.all<EdgeInsets>(
-                          EdgeInsets.symmetric(horizontal: 0),
-                        ),
-                        elevation: MaterialStateProperty.all<double>(5),
-                      ),
-                      child: Ink(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.red, Colors.black],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        child: Container(
-                          constraints: BoxConstraints(
-                            maxWidth: double.infinity,
-                            minHeight: 50.0,
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Register with Google',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
+                        SizedBox(height: 20),
+                        if (_errorMessage != null)
+                          Padding(
+                            padding: EdgeInsets.only(top: 20),
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(color: Colors.red),
                             ),
                           ),
-                        ),
-                      ),
+                      ],
                     ),
-                    SizedBox(height: 20),
-                    if (_errorMessage != null)
-                      Padding(
-                        padding: EdgeInsets.only(top: 20),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: ElevatedButton(
+              onPressed: _navigateToOrganizerRegistration,
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(
+                  const Color.fromARGB(255, 65, 64, 64), // Button color
+                ),
+                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                padding: MaterialStateProperty.all<EdgeInsets>(
+                  EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                elevation: MaterialStateProperty.all<double>(5),
+              ),
+              child: Text(
+                'Become an Organizer',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

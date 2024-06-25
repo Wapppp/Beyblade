@@ -38,17 +38,70 @@ class _RankingPageState extends State<RankingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+<<<<<<< HEAD
         title: Text('Top 100 Players'),
-      ),
-      body: players.isEmpty
-          ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: players.length,
-              itemBuilder: (context, index) {
-                var player = players[index];
-                return _buildPlayerCard(index + 1, player);
-              },
+=======
+        title: Text(
+          'Top 100 Bladers',
+          style: TextStyle(
+              color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+          ),
+        ),
+>>>>>>> ac626535303bd5a527ebc4fd71982803c49c1e57
+      ),
+      body: Container(
+        color: Colors.grey[900], // Dark background color
+        child: players.isEmpty
+            ? Center(child: CircularProgressIndicator())
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 43, 43, 43),
+                      borderRadius:
+                          BorderRadius.vertical(bottom: Radius.circular(16)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.emoji_events,
+                          color: Colors.amber,
+                          size: 32,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'BBC Rankings',
+                          style: TextStyle(
+                              fontSize: 28,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: players.length,
+                      itemBuilder: (context, index) {
+                        var player = players[index];
+                        return _buildPlayerCard(index + 1, player);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
@@ -56,6 +109,7 @@ class _RankingPageState extends State<RankingPage> {
     return Card(
       elevation: 3,
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.grey[850], // Dark grey card background color
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
@@ -67,22 +121,34 @@ class _RankingPageState extends State<RankingPage> {
                 children: [
                   Text(
                     '$rank. ${player['blader_name']}',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white), // White text color
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'MMR: ${_calculateMMR(player['total_wins'], player['total_losses'], player['total_points'])}',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.star, color: Colors.amber, size: 20),
+                      SizedBox(width: 4),
+                      Text(
+                        'MMR: ${_calculateMMR(player['total_wins'], player['total_losses'], player['total_points'])}',
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[400]), // Grey text color
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 8),
                   Text(
                     'As of: ${_formatDate(player['last_updated'])}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[300]), // Grey text color
                   ),
                 ],
               ),
             ),
-            Icon(Icons.star, color: Colors.amber),
           ],
         ),
       ),

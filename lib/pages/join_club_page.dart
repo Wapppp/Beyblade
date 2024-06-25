@@ -53,6 +53,7 @@ class JoinClubPage extends StatelessWidget {
           ),
         ),
       ),
+      backgroundColor: Colors.grey[900], // Set background color here
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('clubs').snapshots(),
         builder: (context, snapshot) {

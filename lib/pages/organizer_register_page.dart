@@ -3,6 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+class AppColors {
+  static const Color primaryColor = Colors.orange;
+  static const Color appBarColor = Colors.black;
+  static const Color scaffoldBackgroundColor = Colors.grey;
+  static const Color cardColor = Colors.grey;
+}
+
 class OrganizerRegisterPage extends StatefulWidget {
   @override
   _OrganizerRegisterPageState createState() => _OrganizerRegisterPageState();
@@ -89,7 +96,17 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Organizer Registration'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
+      backgroundColor: const Color.fromARGB(255, 33, 33, 33),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -97,38 +114,162 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
           children: <Widget>[
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'Organizer Name'),
+              decoration: InputDecoration(
+                labelText: 'Organizer Name',
+                labelStyle: TextStyle(color: Colors.grey[200]),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.cardColor),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.cardColor),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              style: TextStyle(color: Colors.white),
             ),
+            SizedBox(height: 10.0),
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                labelStyle: TextStyle(color: Colors.grey[200]),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.cardColor),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.cardColor),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
+              style: TextStyle(color: Colors.white),
             ),
+            SizedBox(height: 10.0),
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
+              decoration: InputDecoration(
+                labelText: 'Password',
+                labelStyle: TextStyle(color: Colors.grey[200]),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.cardColor),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: AppColors.cardColor),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+              ),
               obscureText: true,
+              style: TextStyle(color: Colors.white),
             ),
             SizedBox(height: 20.0),
             ElevatedButton(
               onPressed: _registerWithEmailAndPassword,
-              child: Text('Register'),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(
+                  AppColors.primaryColor,
+                ),
+                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                padding: MaterialStateProperty.all<EdgeInsets>(
+                  EdgeInsets.symmetric(horizontal: 0),
+                ),
+                elevation: MaterialStateProperty.all<double>(5),
+              ),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryColor,
+                      const Color.fromARGB(255, 0, 0, 0)
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: double.infinity,
+                    minHeight: 50.0,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Register',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
             ),
             SizedBox(height: 10.0),
             ElevatedButton(
               onPressed: _signInWithGoogle,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset('assets/google.png', height: 24.0),
-                  SizedBox(width: 12.0),
-                  Text('Sign in with Google'),
-                ],
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(
+                  AppColors.primaryColor,
+                ),
+                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                ),
+                padding: MaterialStateProperty.all<EdgeInsets>(
+                  EdgeInsets.symmetric(horizontal: 0),
+                ),
+                elevation: MaterialStateProperty.all<double>(5),
+              ),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryColor,
+                      const Color.fromARGB(255, 0, 0, 0)
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: double.infinity,
+                    minHeight: 50.0,
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset('assets/google.png', height: 24.0),
+                      SizedBox(width: 12.0),
+                      Text(
+                        'Sign in with Google',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
             SizedBox(height: 10.0),
             TextButton(
               onPressed: _navigateToOrganizerLoginPage,
-              child: Text('Already have an account? Login'),
+              child: Text(
+                'Already have an account? Login',
+                style: TextStyle(
+                  color: AppColors.primaryColor,
+                  fontSize: 16,
+                ),
+              ),
             ),
           ],
         ),

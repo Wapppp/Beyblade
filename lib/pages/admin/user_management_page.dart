@@ -24,45 +24,69 @@ class _UserManagementPageState extends State<UserManagementPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('User Management'),
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('users').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No users found.'));
-          }
-
-          _userDataSource.updateDocuments(snapshot.data!.docs);
-
-          return SingleChildScrollView(
-            child: PaginatedDataTable(
-              header: Text('User Management'),
-              columns: [
-                DataColumn(label: Text('Blader Name')),
-                DataColumn(label: Text('Email')),
-                DataColumn(label: Text('Role')),
-                DataColumn(label: Text('Actions')),
-              ],
-              source: _userDataSource,
-              rowsPerPage: 5,
-              columnSpacing: 10,
-              horizontalMargin: 20,
-              showCheckboxColumn: false,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          );
-        },
+          ),
+        ),
+      ),
+      body: Container(
+        color: Colors.grey[900],
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _firestore.collection('users').snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Center(child: Text('No users found.'));
+            }
+
+            _userDataSource.updateDocuments(snapshot.data!.docs);
+
+            return SingleChildScrollView(
+              child: PaginatedDataTable(
+                header: Text(
+                  'User Management',
+                  style: TextStyle(color: Colors.white),
+                ),
+                columns: [
+                  DataColumn(
+                      label: Text('Blader Name',
+                          style: TextStyle(color: Colors.white))),
+                  DataColumn(
+                      label:
+                          Text('Email', style: TextStyle(color: Colors.white))),
+                  DataColumn(
+                      label:
+                          Text('Role', style: TextStyle(color: Colors.white))),
+                  DataColumn(
+                      label: Text('Actions',
+                          style: TextStyle(color: Colors.white))),
+                ],
+                source: _userDataSource,
+                rowsPerPage: 5,
+                columnSpacing: 10,
+                horizontalMargin: 20,
+                showCheckboxColumn: false,
+              ),
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToCreateUser,
         child: Icon(Icons.add),
+        backgroundColor: Colors.orange,
       ),
     );
   }
@@ -233,19 +257,22 @@ class UserDataSource extends DataTableSource {
     return DataRow.byIndex(
       index: index,
       cells: [
-        DataCell(Text(userData['blader_name'] ?? 'No Blader Name')),
-        DataCell(Text(userData['email'] ?? 'No Email')),
-        DataCell(Text(userData['role'] ?? 'No Role')),
+        DataCell(Text(userData['blader_name'] ?? 'No Blader Name',
+            style: TextStyle(color: Colors.white))),
+        DataCell(Text(userData['email'] ?? 'No Email',
+            style: TextStyle(color: Colors.white))),
+        DataCell(Text(userData['role'] ?? 'No Role',
+            style: TextStyle(color: Colors.white))),
         DataCell(Row(
           children: [
             IconButton(
-              icon: Icon(Icons.edit),
+              icon: Icon(Icons.edit, color: Colors.white),
               onPressed: () {
                 onEdit(_documents[index]);
               },
             ),
             IconButton(
-              icon: Icon(Icons.delete),
+              icon: Icon(Icons.delete, color: Colors.red),
               onPressed: () {
                 onDelete(_documents[index]);
               },
@@ -253,6 +280,14 @@ class UserDataSource extends DataTableSource {
           ],
         )),
       ],
+      color: MaterialStateProperty.resolveWith<Color?>(
+        (Set<MaterialState> states) {
+          if (states.contains(MaterialState.selected)) {
+            return Colors.grey[700];
+          }
+          return Colors.grey[800];
+        },
+      ),
     );
   }
 
