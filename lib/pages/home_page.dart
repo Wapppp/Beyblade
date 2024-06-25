@@ -208,7 +208,6 @@ class _HomePageState extends State<HomePage> {
   void _handleNavigation(int index) {
     switch (index) {
       case 0:
-        sl<NavigationService>().navigateTo('/home');
         break;
       case 1:
         sl<NavigationService>().navigateTo('/tournaments');

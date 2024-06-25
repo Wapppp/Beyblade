@@ -1,5 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:beyblade/pages/create_club_page.dart';
+import 'club_users_page.dart';
+
+// Define the color palette for the app
+class AppColors {
+  static const Color primaryColor = Colors.orange;
+  static const Color accentColor = Colors.amber;
+  static const Color appBarColor = Colors.black;
+  static const Color scaffoldBackgroundColor = Colors.grey;
+  static const Color cardColor = Color.fromARGB(255, 36, 36, 36);
+  static const Color textColor = Colors.white;
+}
 
 class ClubManagementPage extends StatelessWidget {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -8,9 +20,46 @@ class ClubManagementPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Club Management'),
+        title: Text(
+          'Club Management',
+          style: TextStyle(color: AppColors.textColor),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-      body: ClubList(),
+      body: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+        ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 16, bottom: 8),
+              child: Text(
+                'Club List',
+                style: TextStyle(
+                  color: AppColors.textColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Expanded(
+              child: ClubList(),
+            ),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -19,6 +68,7 @@ class ClubManagementPage extends StatelessWidget {
           );
         },
         child: Icon(Icons.add),
+        backgroundColor: AppColors.primaryColor,
       ),
     );
   }
@@ -51,146 +101,45 @@ class ClubList extends StatelessWidget {
             var name = club['name'] ?? 'No Name';
             var clubId = club.id; // Get the club ID
 
-            return ListTile(
-              title: Text(name),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ClubUsersPage(clubId: clubId),
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 20,
                   ),
-                );
-              },
+                  title: Text(
+                    '${index + 1}. $name',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: AppColors.textColor,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ClubUsersPage(clubId: clubId),
+                      ),
+                    );
+                  },
+                  tileColor: AppColors.cardColor,
+                  leading: CircleAvatar(
+                    child: Icon(Icons.group, color: Colors.white),
+                    backgroundColor: AppColors.primaryColor,
+                  ),
+                ),
+              ),
             );
           },
         );
       },
-    );
-  }
-}
-
-class CreateClubPage extends StatelessWidget {
-  final TextEditingController nameController = TextEditingController();
-
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Create Club'),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'Club Name'),
-            ),
-            SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: () async {
-                await _firestore.collection('clubs').add({
-                  'name': nameController.text,
-                });
-                Navigator.pop(context);
-              },
-              child: Text('Create Club'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ClubUsersPage extends StatelessWidget {
-  final String clubId;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  ClubUsersPage({required this.clubId});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Club Users'),
-      ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('users')
-            .where('clubId', isEqualTo: clubId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No users found for this club.'));
-          }
-
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              var user = snapshot.data!.docs[index];
-              var name = user['name'] ?? 'No Name';
-              var email = user['email'] ?? 'No Email';
-              return ListTile(
-                title: Text(name),
-                subtitle: Text(email),
-                // Implement other user details if needed
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class EditClubPage extends StatelessWidget {
-  final TextEditingController nameController;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final DocumentSnapshot club;
-
-  EditClubPage({required this.club})
-      : nameController = TextEditingController(text: club['name']);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Edit Club'),
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'Club Name'),
-            ),
-            SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: () async {
-                await _firestore.collection('clubs').doc(club.id).update({
-                  'name': nameController.text,
-                });
-                Navigator.pop(context);
-              },
-              child: Text('Save Changes'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
