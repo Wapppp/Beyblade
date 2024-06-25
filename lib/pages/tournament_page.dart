@@ -15,15 +15,6 @@ class TournamentsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Tournaments'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.orange, Colors.black],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -39,10 +30,7 @@ class TournamentsPage extends StatelessWidget {
             return Center(
               child: Text(
                 'No tournaments available',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[200], // White text color
-                ),
+                style: TextStyle(fontSize: 18),
               ),
             );
           }
@@ -59,28 +47,30 @@ class TournamentsPage extends StatelessWidget {
             );
           }).toList();
 
+          // Filter and archive ended tournaments
+          List<TournamentEvent> filteredTournaments = [];
+          for (var tournament in tournaments) {
+            final status = _getTournamentStatus(tournament.date, now);
+            if (status == TournamentStatus.Ended) {
+              _archiveTournament(tournament);
+            } else {
+              filteredTournaments.add(tournament);
+            }
+          }
+
+          if (filteredTournaments.isEmpty) {
+            return Center(
+              child: Text(
+                'No upcoming or ongoing tournaments available',
+                style: TextStyle(fontSize: 18),
+              ),
+            );
+          }
+
           return ListView.builder(
-            itemCount: tournaments.length,
+            itemCount: filteredTournaments.length,
             itemBuilder: (context, index) {
-              final tournament = tournaments[index];
-<<<<<<< HEAD
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: Card(
-                  elevation: 4,
-                  color: Colors.grey[850], // Dark grey card background color
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(12),
-                    title: Text(
-                      tournament.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white, // White text color
-=======
+              final tournament = filteredTournaments[index];
               final status = _getTournamentStatus(tournament.date, now);
 
               return ListTile(
@@ -98,27 +88,10 @@ class TournamentsPage extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => TournamentDetailsPage(
                         tournament: tournament,
->>>>>>> 7adfd8d59a2b476e59ceca7caba4d2eb7b2c62a2
                       ),
                     ),
-                    subtitle: Text(
-                      _formatTimestamp(tournament.date),
-                      style: TextStyle(
-                        color: Colors.white70, // White70 text color
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TournamentDetailsPage(
-                            tournament: tournament, // Pass tournament object
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                  );
+                },
               );
             },
           );
@@ -130,7 +103,6 @@ class TournamentsPage extends StatelessWidget {
   String _formatTimestamp(Timestamp timestamp) {
     DateTime dateTime = timestamp.toDate();
     return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    // Customize formatting as needed (e.g., 'yyyy-MM-dd HH:mm')
   }
 
   Widget _buildStatusWidget(TournamentStatus status) {
@@ -178,7 +150,6 @@ class TournamentsPage extends StatelessWidget {
     DateTime dateTime = tournamentDate.toDate();
 
     if (now.isBefore(dateTime)) {
-      // Tournament date is in the future
       final difference = dateTime.difference(now);
       if (difference.inDays > 0) {
         return TournamentStatus.Upcoming;
@@ -186,11 +157,30 @@ class TournamentsPage extends StatelessWidget {
         return TournamentStatus.Started;
       }
     } else if (now.isAfter(dateTime)) {
-      // Tournament date is in the past
       return TournamentStatus.Ended;
     } else {
-      // Tournament is happening now
       return TournamentStatus.Ongoing;
+    }
+  }
+
+  Future<void> _archiveTournament(TournamentEvent tournament) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('archive_tournaments')
+          .doc(tournament.id)
+          .set({
+        'name': tournament.name,
+        'date': tournament.date,
+        'location': tournament.location,
+        'description': tournament.description,
+      });
+      await FirebaseFirestore.instance
+          .collection('tournaments')
+          .doc(tournament.id)
+          .delete();
+      print('Tournament archived and removed from active collection');
+    } catch (e) {
+      print('Error archiving tournament: $e');
     }
   }
 }

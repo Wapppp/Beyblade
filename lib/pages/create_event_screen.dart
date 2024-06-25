@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:image/image.dart' as img;
 
 class TournamentEvent {
   final String name;
@@ -279,6 +286,30 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       setState(() {
         selectedDuration = picked;
       });
+    }
+  }
+
+  Future<void> _saveEventToFirestore(TournamentEvent event) async {
+    final now = DateTime.now();
+    final tournamentEnd = event.dateAndTime.add(event.duration);
+
+    String collection =
+        tournamentEnd.isBefore(now) ? 'archive_tournaments' : 'tournaments';
+
+    try {
+      await FirebaseFirestore.instance.collection(collection).add({
+        'name': event.name,
+        'dateAndTime': event.dateAndTime,
+        'duration': event.duration
+            .inMilliseconds, // Store duration as milliseconds for easy calculation
+        'location': event.location,
+        'description': event.description,
+        'organizerId': event.organizerId,
+      });
+      print('Event saved to Firestore');
+    } catch (e) {
+      print('Error saving event: $e');
+      // Handle error as needed
     }
   }
 }

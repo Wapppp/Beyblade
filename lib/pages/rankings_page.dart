@@ -38,26 +38,7 @@ class _RankingPageState extends State<RankingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-<<<<<<< HEAD
-        title: const Text('Rankings'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.orange, Colors.black],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-=======
         title: Text('Top 100 Players'),
->>>>>>> 7adfd8d59a2b476e59ceca7caba4d2eb7b2c62a2
       ),
       body: players.isEmpty
           ? Center(child: CircularProgressIndicator())
