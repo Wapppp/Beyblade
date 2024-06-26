@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'manage_participants_page.dart'; // Import the ManageParticipantsPage
+import 'package:flutter/services.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class TournamentDetailsScreen extends StatelessWidget {
   final DocumentSnapshot tournamentDoc;
@@ -115,12 +117,63 @@ class TournamentDetailsScreen extends StatelessWidget {
                   },
                   child: Text('Manage Participants'),
                 ),
+                SizedBox(height: 20),
+                _buildQrCodeContainer(),
               ],
             ),
           );
         },
       ),
     );
+  }
+
+  Widget _buildQrCodeContainer() {
+    return FutureBuilder<String>(
+      future: _getQrCodeUrl(tournamentDoc.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            width: 200,
+            height: 200,
+            color: Colors.grey[300],
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return Container(
+            width: 200,
+            height: 200,
+            color: Colors.grey[300],
+            child: Center(
+              child: Text('Error: ${snapshot.error}'),
+            ),
+          );
+        }
+        final qrCodeUrl = snapshot.data!;
+        return Container(
+          width: 200,
+          height: 200,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.black),
+            borderRadius: BorderRadius.circular(10),
+            image: DecorationImage(
+              image: NetworkImage(qrCodeUrl),
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String> _getQrCodeUrl(String eventId) async {
+    final storageRef =
+        FirebaseStorage.instance.ref().child('qr_codes/$eventId.png');
+    final downloadUrl = await storageRef.getDownloadURL();
+    return downloadUrl;
   }
 
   void _navigateToManageParticipants(BuildContext context) {

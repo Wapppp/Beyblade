@@ -38,9 +38,6 @@ class _RankingPageState extends State<RankingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-<<<<<<< HEAD
-        title: Text('Top 100 Players'),
-=======
         title: Text(
           'Top 100 Bladers',
           style: TextStyle(
@@ -55,7 +52,6 @@ class _RankingPageState extends State<RankingPage> {
             ),
           ),
         ),
->>>>>>> ac626535303bd5a527ebc4fd71982803c49c1e57
       ),
       body: Container(
         color: Colors.grey[900], // Dark background color

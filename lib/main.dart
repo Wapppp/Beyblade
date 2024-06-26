@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 // Import your other pages
 import 'pages/login_page.dart';
@@ -38,7 +40,6 @@ void main() async {
         measurementId: "G-XJHHBQTNC6",
       ),
     );
-
     setupLocator(); // Initialize GetIt and setup NavigationService
     runApp(MyApp());
   } catch (e) {
