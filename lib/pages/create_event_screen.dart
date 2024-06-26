@@ -1,9 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'dart:ui' as ui;
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: CreateEventScreen(
+        onEventCreated: (event) {
+          // handle event creation
+        },
+        organizerId: 'organizerId',
+      ),
+    );
+  }
+}
 
 class TournamentEvent {
   final String name;
-  final DateTime dateAndTime; // Changed to DateTime for combined date and time
-  final Duration duration; // New field for tournament duration
+  final DateTime dateAndTime;
+  final Duration duration;
   final String location;
   final String description;
   final String organizerId;
@@ -93,7 +118,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 TournamentEvent event = TournamentEvent(
                   name: nameController.text,
                   dateAndTime: DateTime(
@@ -108,7 +133,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   description: descriptionController.text,
                   organizerId: widget.organizerId,
                 );
+
                 widget.onEventCreated(event);
+                await _saveEventToFirestore(event);
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
@@ -279,6 +306,54 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       setState(() {
         selectedDuration = picked;
       });
+    }
+  }
+
+  Future<void> _saveEventToFirestore(TournamentEvent event) async {
+    final docRef = FirebaseFirestore.instance.collection('events').doc();
+    await docRef.set({
+      'name': event.name,
+      'date': event.dateAndTime,
+      'duration': event.duration.inMilliseconds,
+      'location': event.location,
+      'description': event.description,
+      'organizerId': event.organizerId,
+      'status': event.getStatus(),
+    });
+
+    // Generate and upload QR code
+    await _generateAndUploadQrCode(docRef.id, event);
+  }
+
+  Future<void> _generateAndUploadQrCode(
+      String eventId, TournamentEvent event) async {
+    try {
+      final qrData =
+          'Event ID: $eventId\nEvent Name: ${event.name}\nOrganizer: ${event.organizerId}';
+      final painter = QrPainter(
+        data: qrData,
+        version: QrVersions.auto,
+        errorCorrectionLevel: QrErrorCorrectLevel.L,
+      );
+
+      final imageSize = 200.0;
+      final pictureRecorder = ui.PictureRecorder();
+      final canvas = Canvas(pictureRecorder);
+      final size = Size(imageSize, imageSize);
+      painter.paint(canvas, size);
+      final picture = pictureRecorder.endRecording();
+      final image = await picture.toImage(imageSize.toInt(), imageSize.toInt());
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final buffer = byteData!.buffer.asUint8List();
+
+      final storageRef =
+          FirebaseStorage.instance.ref().child('qr_codes/$eventId.png');
+      await storageRef.putData(buffer);
+
+      print('QR code uploaded to Firebase Storage');
+    } catch (e) {
+      print('Error generating or uploading QR code: $e');
+      // Handle
     }
   }
 }
