@@ -47,6 +47,9 @@ dependencies:
   country_flags: ^3.0.0
   country_code_picker: ^3.0.0
   flutter_svg: ^2.0.9
+  fl_chart: ^0.68.0
+  flutter_card_swiper: ^7.0.1
+  image_picker: ^1.1.2
 
 
 dev_dependencies:
