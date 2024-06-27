@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'auth_service.dart';
 import 'dart:js' as js;
+// Make sure to adjust the path accordingly
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -9,47 +11,12 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
-
-  Future<void> _signInWithGoogle() async {
-    try {
-      // Trigger the sign-in flow by calling the JavaScript function directly
-      await js.context.callMethod('signInWithGoogle');
-    } catch (e) {
-      // Handle any errors that occur during sign-in
-      print('Error signing in with Google: $e');
-    }
-  }
-
-  void _storeUserDataInFirestore(User user) async {
-    try {
-      await _firestore.collection('users').doc(user.uid).set({
-        'blader_name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'points': 0, // Default points
-        'rank': 'No Rank', // Default rank
-        'won': 0, // Default won
-        'lost': 0, // Default lost
-      });
-      print('User data stored in Firestore successfully!');
-    } catch (e) {
-      print('Error storing user data in Firestore: $e');
-    }
-  }
-
-  void _navigateToProfilePage() {
-    Navigator.pushReplacementNamed(context, '/profile');
-  }
-
-  void _navigateToOrganizerRegistration() {
-    Navigator.pushNamed(context, '/register_organizer');
-  }
+  final AuthService _authService = AuthService();
 
   Future<void> _register() async {
     setState(() {
@@ -58,25 +25,18 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      final UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      final userCredential = await _authService.registerWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        _nameController.text.trim(),
       );
 
-      if (userCredential.user != null) {
-        _storeUserDataInFirestore(userCredential.user!); // Remove await here
-        _navigateToProfilePage();
+      if (userCredential != null) {
+        _showEmailVerificationDialog();
       }
-    } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: $e');
-      setState(() {
-        _errorMessage = _handleAuthError(e.code);
-      });
     } catch (e) {
-      print('Error: $e');
       setState(() {
-        _errorMessage = 'Failed to register. Please try again later.';
+        _errorMessage = e.toString();
       });
     } finally {
       setState(() {
@@ -85,19 +45,28 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  String _handleAuthError(String errorCode) {
-    switch (errorCode) {
-      case 'email-already-in-use':
-        return 'The email address is already in use by another account.';
-      case 'invalid-email':
-        return 'The email address is invalid.';
-      case 'weak-password':
-        return 'The password is too weak.';
-      case 'network-request-failed':
-        return 'Network error occurred. Please check your internet connection.';
-      default:
-        return 'Registration failed. Please try again later.';
-    }
+  void _showEmailVerificationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Verify your email'),
+        content: Text(
+            'A verification link has been sent to your email. Please verify your email before logging in.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _navigateToLoginPage();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToLoginPage() {
+    Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override
@@ -118,10 +87,10 @@ class _RegisterPageState extends State<RegisterPage> {
       body: Stack(
         children: [
           Container(
-            color: Colors.grey[900], // Background color
+            color: Colors.grey[900],
             child: Center(
               child: Card(
-                color: Colors.grey[850], // Card color
+                color: Colors.grey[850],
                 margin: EdgeInsets.symmetric(horizontal: 20),
                 elevation: 8.0,
                 shape: RoundedRectangleBorder(
@@ -202,7 +171,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 style: ButtonStyle(
                                   backgroundColor:
                                       MaterialStateProperty.all<Color>(
-                                    Colors.orange, // Button color
+                                    Colors.orange,
                                   ),
                                   shape: MaterialStateProperty.all<
                                       RoundedRectangleBorder>(
@@ -243,47 +212,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                               ),
                         SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _signInWithGoogle,
-                          style: ButtonStyle(
-                            backgroundColor:
-                                MaterialStateProperty.all<Color>(Colors.red),
-                            shape: MaterialStateProperty.all<OutlinedBorder>(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                            ),
-                            padding: MaterialStateProperty.all<EdgeInsets>(
-                              EdgeInsets.symmetric(horizontal: 0),
-                            ),
-                            elevation: MaterialStateProperty.all<double>(5),
-                          ),
-                          child: Ink(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Colors.red, Colors.black],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            child: Container(
-                              constraints: BoxConstraints(
-                                maxWidth: double.infinity,
-                                minHeight: 50.0,
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                'Register with Google',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 20),
                         if (_errorMessage != null)
                           Padding(
                             padding: EdgeInsets.only(top: 20),
@@ -295,34 +223,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       ],
                     ),
                   ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 16,
-            right: 16,
-            child: ElevatedButton(
-              onPressed: _navigateToOrganizerRegistration,
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all<Color>(
-                  const Color.fromARGB(255, 65, 64, 64), // Button color
-                ),
-                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                padding: MaterialStateProperty.all<EdgeInsets>(
-                  EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                elevation: MaterialStateProperty.all<double>(5),
-              ),
-              child: Text(
-                'Become an Organizer',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
                 ),
               ),
             ),
