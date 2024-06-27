@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'manage_participants_page.dart'; // Import the ManageParticipantsPage
-import 'package:flutter/services.dart';
+import 'manage_participants_page.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class TournamentDetailsScreen extends StatelessWidget {

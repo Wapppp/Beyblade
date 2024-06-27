@@ -310,7 +310,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _saveEventToFirestore(TournamentEvent event) async {
-    final docRef = FirebaseFirestore.instance.collection('events').doc();
+    final docRef = FirebaseFirestore.instance.collection('tournaments').doc();
     await docRef.set({
       'name': event.name,
       'date': event.dateAndTime,
