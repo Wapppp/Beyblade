@@ -1,72 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'auth_service.dart'; // Adjust the path as needed
-import 'forgot_password_page.dart'; // Import the ForgotPasswordPage
 
-class LoginPage extends StatefulWidget {
+class ForgotPasswordPage extends StatefulWidget {
   @override
-  _LoginPageState createState() => _LoginPageState();
+  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
-  final AuthService _authService = AuthService();
 
-  Future<void> _login() async {
+  Future<void> _resetPassword() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      UserCredential userCredential = await _authService.signInWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: _emailController.text.trim(),
       );
-
-      User? user = userCredential.user;
-
-      if (user != null) {
-        if (user.emailVerified) {
-          _navigateToHomePage();
-        } else {
-          setState(() {
-            _errorMessage = 'Please verify your email before logging in.';
-          });
-          await _authService.signOut();
-        }
-      } else {
-        setState(() {
-          _errorMessage = 'Login failed. Please try again.';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
-    } finally {
       setState(() {
         _isLoading = false;
+        _errorMessage = 'Password reset email sent. Check your email inbox.';
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
       });
     }
-  }
-
-   void _navigateToHomePage() {
-    Navigator.pushReplacementNamed(context, '/home');
-  }
-
-  void _navigateToForgotPassword() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ForgotPasswordPage()));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login', style: TextStyle(color: Colors.grey[300])),
+        title: Text('Forgot Password', style: TextStyle(color: Colors.grey[300])),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -96,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Text(
-                          'Login',
+                          'Forgot Password',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -122,28 +93,10 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(color: Colors.white),
                         ),
                         SizedBox(height: 20),
-                        TextField(
-                          controller: _passwordController,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            labelStyle: TextStyle(color: Colors.grey[200]),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                          ),
-                          obscureText: true,
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        SizedBox(height: 20),
                         _isLoading
                             ? CircularProgressIndicator()
                             : ElevatedButton(
-                                onPressed: _login,
+                                onPressed: _resetPassword,
                                 style: ButtonStyle(
                                   backgroundColor:
                                       MaterialStateProperty.all<Color>(
@@ -178,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
-                                      'Login',
+                                      'Reset Password',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -187,17 +140,6 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                               ),
-                        SizedBox(height: 20),
-                        TextButton(
-                          onPressed: _navigateToForgotPassword,
-                          child: Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: Colors.grey[200],
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
                         SizedBox(height: 20),
                         if (_errorMessage != null)
                           Padding(
@@ -222,7 +164,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 }

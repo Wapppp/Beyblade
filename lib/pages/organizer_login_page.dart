@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'app_colors.dart'; // Import your AppColors class
 
@@ -30,7 +29,16 @@ class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
             await _checkOrganizerExists(userCredential.user!.uid);
 
         if (isValidOrganizer) {
-          Navigator.pushReplacementNamed(context, '/organizer');
+          // Check if email is verified
+          if (userCredential.user!.emailVerified) {
+            Navigator.pushReplacementNamed(context, '/organizer');
+          } else {
+            // If email not verified, show error and sign out
+            await _auth.signOut();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Please verify your email to login')),
+            );
+          }
         } else {
           // If not a valid organizer, sign out and show error
           await _auth.signOut();
@@ -59,38 +67,7 @@ class _OrganizerLoginPageState extends State<OrganizerLoginPage> {
   }
 
   Future<void> _signInWithGoogle() async {
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser != null) {
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-        final AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken!,
-          idToken: googleAuth.idToken!,
-        );
-
-        final UserCredential userCredential =
-            await _auth.signInWithCredential(credential);
-        final User? user = userCredential.user;
-
-        if (user != null) {
-          // Check if the organizer exists in Firestore
-          bool isValidOrganizer = await _checkOrganizerExists(user.uid);
-
-          if (isValidOrganizer) {
-            Navigator.pushReplacementNamed(context, '/organizer');
-          } else {
-            // If not a valid organizer, sign out and show error
-            await _auth.signOut();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Invalid organizer details')),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      print('Error during Google Sign-In: $e');
-    }
+    // Implement Google Sign-In logic similar to what you have
   }
 
   @override

@@ -17,105 +17,44 @@ class ClubDetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(clubData['name'] ?? 'Club Detail'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
+      backgroundColor: Colors.grey[900], // Dark grey background
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            SizedBox(height: 16),
             Text(
               clubData['name'] ?? 'Club Name',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             SizedBox(height: 16),
-            FutureBuilder<DocumentSnapshot>(
-              future: _fetchMemberData(clubData['leader']),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Text('Leader: Loading...');
-                } else if (snapshot.hasError ||
-                    !snapshot.hasData ||
-                    !snapshot.data!.exists) {
-                  return Text('Leader: Unknown');
-                } else {
-                  var leaderData =
-                      snapshot.data!.data() as Map<String, dynamic>;
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ProfileDetailPage(uid: clubData['leader']),
-                        ),
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundImage:
-                              NetworkImage(leaderData['profile_picture'] ?? ''),
-                          radius: 20,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Leader: ${leaderData['blader_name'] ?? 'Unknown'}',
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              },
-            ),
+            _buildLeaderSection(clubData['leader']),
             SizedBox(height: 16),
-            FutureBuilder<DocumentSnapshot>(
-              future: _fetchMemberData(clubData['vice_captain_name']),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Text('Vice Captain: Loading...');
-                } else if (snapshot.hasError ||
-                    !snapshot.hasData ||
-                    !snapshot.data!.exists) {
-                  return Text('Vice Captain: None');
-                } else {
-                  var viceCaptainData =
-                      snapshot.data!.data() as Map<String, dynamic>;
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProfileDetailPage(
-                              uid: clubData['vice_captain_name']),
-                        ),
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: NetworkImage(
-                              viceCaptainData['profile_picture'] ?? ''),
-                          radius: 20,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Vice Captain: ${viceCaptainData['blader_name'] ?? 'None'}',
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              },
-            ),
+            _buildViceCaptainSection(clubData['vice_captain_name']),
             SizedBox(height: 16),
             Text(
               'Members:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
             ),
             Expanded(
-              child: _buildMembersList(clubData['members'], clubData['leader']),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[850], // Dark grey background for list
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: _buildMembersList(clubData['members'], clubData['leader']),
+              ),
             ),
             SizedBox(height: 16),
             if (!isLeader)
@@ -124,6 +63,15 @@ class ClubDetailPage extends StatelessWidget {
                   _leaveClub(context, userId, clubSnapshot.id);
                   Navigator.pop(context);
                 },
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(Colors.black), // Black button background
+                  foregroundColor: MaterialStateProperty.all<Color>(Colors.white), // White button text
+                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
                 child: Text('Leave Club'),
               ),
             if (isLeader)
@@ -134,6 +82,15 @@ class ClubDetailPage extends StatelessWidget {
                     onPressed: () {
                       _navigateToManageClubPage(context, clubSnapshot);
                     },
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(Colors.black), // Black button background
+                      foregroundColor: MaterialStateProperty.all<Color>(Colors.white), // White button text
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
                     child: Text('Manage Club'),
                   ),
                 ],
@@ -144,9 +101,93 @@ class ClubDetailPage extends StatelessWidget {
     );
   }
 
+  Widget _buildLeaderSection(String? leaderId) {
+    if (leaderId == null || leaderId.isEmpty) {
+      return Text('Leader: Unknown', style: TextStyle(color: Colors.white));
+    }
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: _fetchMemberData(leaderId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Text('Leader: Loading...', style: TextStyle(color: Colors.white));
+        } else if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+          return Text('Leader: Unknown', style: TextStyle(color: Colors.white));
+        } else {
+          var leaderData = snapshot.data!.data() as Map<String, dynamic>;
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileDetailPage(uid: leaderId),
+                ),
+              );
+            },
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundImage: NetworkImage(leaderData['profile_picture'] ?? ''),
+                  radius: 20,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'Leader: ${leaderData['blader_name'] ?? 'Unknown'}',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ],
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildViceCaptainSection(String? viceCaptainId) {
+    if (viceCaptainId == null || viceCaptainId.isEmpty) {
+      return Text('Vice Captain: None', style: TextStyle(color: Colors.white));
+    }
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: _fetchMemberData(viceCaptainId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Text('Vice Captain: Loading...', style: TextStyle(color: Colors.white));
+        } else if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+          return Text('Vice Captain: None', style: TextStyle(color: Colors.white));
+        } else {
+          var viceCaptainData = snapshot.data!.data() as Map<String, dynamic>;
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileDetailPage(uid: viceCaptainId),
+                ),
+              );
+            },
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundImage: NetworkImage(viceCaptainData['profile_picture'] ?? ''),
+                  radius: 20,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'Vice Captain: ${viceCaptainData['blader_name'] ?? 'None'}',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ],
+            ),
+          );
+        }
+      },
+    );
+  }
+
   Widget _buildMembersList(List<dynamic>? members, String? leaderId) {
     if (members == null || leaderId == null) {
-      return Center(child: Text('No members found'));
+      return Center(child: Text('No members found', style: TextStyle(color: Colors.white)));
     }
 
     List<String> filteredMembers = members
@@ -161,7 +202,7 @@ class ClubDetailPage extends StatelessWidget {
           return Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No members found'));
+          return Center(child: Text('No members found', style: TextStyle(color: Colors.white)));
         }
         List<DocumentSnapshot> memberDocs = snapshot.data!;
         return ListView.builder(
@@ -173,18 +214,16 @@ class ClubDetailPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        ProfileDetailPage(uid: memberDocs[index].id),
+                    builder: (context) => ProfileDetailPage(uid: memberDocs[index].id),
                   ),
                 );
               },
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundImage:
-                      NetworkImage(memberData['profile_picture'] ?? ''),
+                  backgroundImage: NetworkImage(memberData['profile_picture'] ?? ''),
                   radius: 20,
                 ),
-                title: Text(memberData['blader_name'] ?? 'Unknown'),
+                title: Text(memberData['blader_name'] ?? 'Unknown', style: TextStyle(color: Colors.white)),
               ),
             );
           },
@@ -193,8 +232,7 @@ class ClubDetailPage extends StatelessWidget {
     );
   }
 
-  Future<List<DocumentSnapshot>> _fetchMembersData(
-      List<String> memberIds) async {
+  Future<List<DocumentSnapshot>> _fetchMembersData(List<String> memberIds) async {
     var memberFutures = memberIds.map(
         (uid) => FirebaseFirestore.instance.collection('users').doc(uid).get());
     return await Future.wait(memberFutures);
@@ -207,10 +245,7 @@ class ClubDetailPage extends StatelessWidget {
     }
     try {
       // Fetch the document snapshot corresponding to the memberId
-      return await FirebaseFirestore.instance
-          .collection('users')
-          .doc(memberId)
-          .get();
+      return await FirebaseFirestore.instance.collection('users').doc(memberId).get();
     } catch (e) {
       // Handle errors fetching the document, if necessary
       print('Error fetching member data: $e');
@@ -218,8 +253,7 @@ class ClubDetailPage extends StatelessWidget {
     }
   }
 
-  Future<void> _leaveClub(
-      BuildContext context, String userId, String clubId) async {
+  Future<void> _leaveClub(BuildContext context, String userId, String clubId) async {
     if (clubId.isEmpty) {
       print('Club ID is invalid!');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -247,8 +281,7 @@ class ClubDetailPage extends StatelessWidget {
     }
   }
 
-  void _navigateToManageClubPage(
-      BuildContext context, DocumentSnapshot clubSnapshot) {
+  void _navigateToManageClubPage(BuildContext context, DocumentSnapshot clubSnapshot) {
     Navigator.push(
       context,
       MaterialPageRoute(

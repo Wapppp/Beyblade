@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'auth_service.dart';
 
 class AppColors {
   static const Color primaryColor = Colors.orange;
@@ -21,8 +22,15 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
 
   Future<void> _registerWithEmailAndPassword() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
       // Create user with email and password
       final UserCredential userCredential =
@@ -32,15 +40,23 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
       );
 
       if (userCredential.user != null) {
+        // Send email verification
+        await userCredential.user!.sendEmailVerification();
+
         // Store organizer data in Firestore
         await _storeOrganizerDataInFirestore(userCredential.user!);
 
-        // Navigate to organizer page
-        Navigator.pushReplacementNamed(context, '/organizer');
+        // Show email verification dialog
+        _showEmailVerificationDialog();
       }
     } catch (e) {
-      print('Error during registration: $e');
-      // Handle registration errors here
+      setState(() {
+        _errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -69,7 +85,9 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
         }
       }
     } catch (e) {
-      print('Error during Google Sign-In: $e');
+      setState(() {
+        _errorMessage = e.toString();
+      });
     }
   }
 
@@ -83,8 +101,30 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
         'role': 'organizer',
       });
     } catch (e) {
-      print('Error storing organizer data: $e');
+      setState(() {
+        _errorMessage = e.toString();
+      });
     }
+  }
+
+  void _showEmailVerificationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Verify your email'),
+        content: Text(
+            'A verification link has been sent to your email. Please verify your email before logging in.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _navigateToOrganizerLoginPage();
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToOrganizerLoginPage() {
@@ -164,50 +204,52 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
               style: TextStyle(color: Colors.white),
             ),
             SizedBox(height: 20.0),
-            ElevatedButton(
-              onPressed: _registerWithEmailAndPassword,
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all<Color>(
-                  AppColors.primaryColor,
-                ),
-                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                padding: MaterialStateProperty.all<EdgeInsets>(
-                  EdgeInsets.symmetric(horizontal: 0),
-                ),
-                elevation: MaterialStateProperty.all<double>(5),
-              ),
-              child: Ink(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primaryColor,
-                      const Color.fromARGB(255, 0, 0, 0)
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: double.infinity,
-                    minHeight: 50.0,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    'Register',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
+            _isLoading
+                ? CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _registerWithEmailAndPassword,
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all<Color>(
+                        AppColors.primaryColor,
+                      ),
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      padding: MaterialStateProperty.all<EdgeInsets>(
+                        EdgeInsets.symmetric(horizontal: 0),
+                      ),
+                      elevation: MaterialStateProperty.all<double>(5),
+                    ),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primaryColor,
+                            const Color.fromARGB(255, 0, 0, 0)
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: double.infinity,
+                          minHeight: 50.0,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Register',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ),
             SizedBox(height: 10.0),
             ElevatedButton(
               onPressed: _signInWithGoogle,
@@ -261,6 +303,14 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
               ),
             ),
             SizedBox(height: 10.0),
+            if (_errorMessage != null)
+              Padding(
+                padding: EdgeInsets.only(top: 20),
+                child: Text(
+                  _errorMessage!,
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
             TextButton(
               onPressed: _navigateToOrganizerLoginPage,
               child: Text(

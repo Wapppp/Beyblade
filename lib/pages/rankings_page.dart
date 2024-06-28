@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'user_profile.dart';
+
 class RankingPage extends StatefulWidget {
   @override
   _RankingPageState createState() => _RankingPageState();
@@ -8,7 +10,7 @@ class RankingPage extends StatefulWidget {
 
 class _RankingPageState extends State<RankingPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late List<Map<String, dynamic>> players = [];
+  List<Map<String, dynamic>> players = [];
 
   @override
   void initState() {
@@ -24,14 +26,58 @@ class _RankingPageState extends State<RankingPage> {
           .limit(100)
           .get();
 
+      List<Map<String, dynamic>> fetchedPlayers = [];
+
+      for (var doc in playerStatsSnapshot.docs) {
+        String bladerName = doc['blader_name'];
+        String profilePicture = await _fetchProfilePicture(bladerName);
+
+        fetchedPlayers.add({
+          'blader_name': bladerName,
+          'total_wins': doc['total_wins'],
+          'total_losses': doc['total_losses'],
+          'profile_picture': profilePicture,
+        });
+      }
+
       setState(() {
-        players = playerStatsSnapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .toList();
+        players = fetchedPlayers;
       });
     } catch (e) {
       print('Error fetching top players: $e');
     }
+  }
+
+  Future<String> _fetchProfilePicture(String bladerName) async {
+  try {
+    final DocumentSnapshot userSnapshot =
+        await _firestore.collection('users').doc(bladerName).get();
+
+    if (userSnapshot.exists) {
+      return userSnapshot['profile_picture'] ?? '';
+    } else {
+      return ''; // Handle case where user document does not exist
+    }
+  } catch (e) {
+    print('Error fetching profile picture for $bladerName: $e');
+    return ''; // Handle error gracefully
+  }
+}
+
+  void _handleVisit(Map<String, dynamic> player) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfilePage(
+          userProfile: UserProfile(
+            bladerName: player['blader_name'],
+            won: player['total_wins'] ?? 0,
+            lost: player['total_losses'] ?? 0,
+            profilePicture: player['profile_picture'] ?? '',
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -41,7 +87,10 @@ class _RankingPageState extends State<RankingPage> {
         title: Text(
           'Top 100 Bladers',
           style: TextStyle(
-              color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -79,9 +128,10 @@ class _RankingPageState extends State<RankingPage> {
                         Text(
                           'BBC Rankings',
                           style: TextStyle(
-                              fontSize: 28,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold),
+                            fontSize: 28,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -118,9 +168,10 @@ class _RankingPageState extends State<RankingPage> {
                   Text(
                     '$rank. ${player['blader_name']}',
                     style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white), // White text color
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                   SizedBox(height: 8),
                   Row(
@@ -128,21 +179,33 @@ class _RankingPageState extends State<RankingPage> {
                       Icon(Icons.star, color: Colors.amber, size: 20),
                       SizedBox(width: 4),
                       Text(
-                        'MMR: ${_calculateMMR(player['total_wins'], player['total_losses'], player['total_points'])}',
+                        'MMR: ${_calculateMMR(player['total_wins'], player['total_losses'])}',
                         style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[400]), // Grey text color
+                          fontSize: 16,
+                          color: Colors.grey[400],
+                        ),
                       ),
                     ],
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'As of: ${_formatDate(player['last_updated'])}',
+                    'As of: ${_formatDate(DateTime.now())}',
                     style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[300]), // Grey text color
+                      fontSize: 14,
+                      color: Colors.grey[300],
+                    ),
                   ),
                 ],
+              ),
+            ),
+            // Visit button
+            TextButton(
+              onPressed: () {
+                _handleVisit(player); // Pass player data to track visit
+              },
+              child: Text(
+                'Visit',
+                style: TextStyle(color: Colors.orange),
               ),
             ),
           ],
@@ -151,15 +214,14 @@ class _RankingPageState extends State<RankingPage> {
     );
   }
 
-  int _calculateMMR(int totalWins, int totalLosses, int totalPoints) {
+  int _calculateMMR(int? totalWins, int? totalLosses) {
     // Your MMR calculation logic here
-    // Example: This is a simple example, adjust based on your specific formula
-    return totalWins * 3 + totalLosses * 1 + totalPoints * 2;
+    int wins = totalWins ?? 0;
+    int losses = totalLosses ?? 0;
+    return wins * 3 + losses * 1; // Adjust this based on your actual MMR formula
   }
 
-  String _formatDate(Timestamp timestamp) {
-    var date =
-        DateTime.fromMillisecondsSinceEpoch(timestamp.millisecondsSinceEpoch);
+  String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
 }

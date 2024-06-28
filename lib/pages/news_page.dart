@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // Import intl package for DateFormat
+import 'package:intl/intl.dart';
 
 class NewsPage extends StatelessWidget {
   @override
@@ -8,7 +8,7 @@ class NewsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('News'),
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Colors.grey[900], // Set background color to grey 900
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -53,6 +53,10 @@ class NewsPage extends StatelessWidget {
                   elevation: 4,
                   margin: EdgeInsets.fromLTRB(
                       10, 10, 10, 20), // Added bottom margin
+                  color: Colors.grey[850], // Dark grey background
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -107,15 +111,6 @@ class NewsPage extends StatelessWidget {
                             ],
                           ),
                         ),
-                      if (data != null && data.containsKey('description'))
-                        Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Text(
-                            data['description'] ??
-                                '', // Handle potential null value
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ),
                       if (date != null) // Display publication date if available
                         Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -166,11 +161,6 @@ class NewsPage extends StatelessWidget {
                   fit: BoxFit.cover,
                   height: 200, // Adjust the height as needed
                 ),
-              if (data.containsKey('description')) SizedBox(height: 8),
-              Text(
-                data['description'] ?? '', // Handle potential null value
-                style: TextStyle(fontSize: 16),
-              ),
               if (data
                   .containsKey('date')) // Display publication date if available
                 Padding(
@@ -183,6 +173,11 @@ class NewsPage extends StatelessWidget {
                     ),
                   ),
                 ),
+              SizedBox(height: 8),
+              Text(
+                data['description'] ?? '', // Handle potential null value
+                style: TextStyle(fontSize: 16),
+              ),
             ],
           ),
         ),

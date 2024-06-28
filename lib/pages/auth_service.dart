@@ -5,7 +5,7 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<UserCredential?> registerWithEmailAndPassword(
+  Future<UserCredential> registerWithEmailAndPassword(
       String email, String password, String name) async {
     try {
       final UserCredential userCredential =
@@ -18,16 +18,17 @@ class AuthService {
         await userCredential.user!.sendEmailVerification();
         await _storeUserDataInFirestore(userCredential.user!, name, email);
         return userCredential;
+      } else {
+        throw 'User registration failed';
       }
     } on FirebaseAuthException catch (e) {
       throw _handleAuthError(e.code);
     } catch (e) {
       throw 'Failed to register. Please try again later.';
     }
-    return null;
   }
 
-  Future<UserCredential?> signInWithEmailAndPassword(
+  Future<UserCredential> signInWithEmailAndPassword(
       String email, String password) async {
     try {
       final UserCredential userCredential =
@@ -41,6 +42,10 @@ class AuthService {
     } catch (e) {
       throw 'Failed to sign in. Please try again later.';
     }
+  }
+
+  Future<void> signOut() async {
+    await _auth.signOut();
   }
 
   Future<void> _storeUserDataInFirestore(
