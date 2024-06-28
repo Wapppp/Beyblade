@@ -1,12 +1,8 @@
-import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // Import DateFormat for date formatting
+import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart'; // Import QR code scanner plugin
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:qr_flutter/qr_flutter.dart';
-import 'qr_scanner_web_page.dart'; // Import the TournamentsScreen
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 class TournamentDetailsPage extends StatefulWidget {
   final TournamentEvent tournament;
@@ -22,8 +18,6 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
   String participantId = '';
   late User? currentUser;
   bool isOrganizer = false;
-  final GlobalKey qrKey =
-      GlobalKey(debugLabel: 'QR'); // Key for QR code scanner
 
   @override
   void initState() {
@@ -144,6 +138,46 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
     }
   }
 
+  void _onQRViewCreated(String qrCode) async {
+    if (currentUser == null) {
+      return;
+    }
+
+    if (isOrganizer) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Organizers cannot join this tournament')),
+      );
+      return;
+    }
+
+    try {
+      // Assuming the QR code contains the tournament ID
+      String tournamentId = qrCode;
+
+      String bladerName = await _fetchBladerName(currentUser!.uid);
+
+      await FirebaseFirestore.instance.collection('participants').add({
+        'tournament_id': tournamentId,
+        'user_id': currentUser!.uid,
+        'blader_name': bladerName,
+        'status': 'confirmed',
+      });
+      setState(() {
+        isParticipant = true;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Joined Tournament and confirmed participation'),
+        ),
+      );
+    } catch (e) {
+      print('Error scanning QR code and joining tournament: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to join tournament')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -185,7 +219,16 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
             SizedBox(height: 8),
             _buildParticipantsList(),
             SizedBox(height: 16),
-            _buildQRCodeScannerButton(), // Use a separate method to handle QR code button
+            ElevatedButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      QRScannerPage(onQRViewCreated: _onQRViewCreated),
+                ),
+              ),
+              child: Text('Scan QR Code'),
+            ),
           ],
         ),
       ),
@@ -217,83 +260,41 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
           );
         }).toList();
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Participants:',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: participants.length,
-                itemBuilder: (context, index) {
-                  final participant = participants[index];
-                  return ListTile(
-                    leading: FutureBuilder<DocumentSnapshot>(
-                      future: _fetchProfileData(participant.userId),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return CircleAvatar(
-                            child: Text(participant.bladerName[0]),
-                          );
-                        } else if (snapshot.hasError ||
-                            !snapshot.hasData ||
-                            !snapshot.data!.exists) {
-                          return CircleAvatar(
-                            child: Text(participant.bladerName[0]),
-                          );
-                        } else {
-                          var profileData =
-                              snapshot.data!.data() as Map<String, dynamic>;
-                          return CircleAvatar(
-                            backgroundImage: NetworkImage(
-                                profileData['profile_picture'] ?? ''),
-                            child: Text(participant.bladerName[0]),
-                          );
-                        }
-                      },
-                    ),
-                    title: Text(participant.bladerName),
-                  );
+        return ListView.builder(
+          shrinkWrap: true,
+          itemCount: participants.length,
+          itemBuilder: (context, index) {
+            final participant = participants[index];
+            return ListTile(
+              leading: FutureBuilder<DocumentSnapshot>(
+                future: _fetchProfileData(participant.userId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircleAvatar(
+                      child: Text(participant.bladerName[0]),
+                    );
+                  } else if (snapshot.hasError ||
+                      !snapshot.hasData ||
+                      !snapshot.data!.exists) {
+                    return CircleAvatar(
+                      child: Text(participant.bladerName[0]),
+                    );
+                  } else {
+                    var profileData =
+                        snapshot.data!.data() as Map<String, dynamic>;
+                    return CircleAvatar(
+                      backgroundImage:
+                          NetworkImage(profileData['profile_picture'] ?? ''),
+                      child: Text(participant.bladerName[0]),
+                    );
+                  }
                 },
               ),
-            ),
-            SizedBox(height: 16),
-          ],
+              title: Text(participant.bladerName),
+            );
+          },
         );
       },
-    );
-  }
-
-  Widget _buildQRCodeScannerButton() {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      return ElevatedButton(
-        onPressed: () => _scanQRCode(context),
-        child: Text('Scan QR Code'),
-      );
-    } else if (kIsWeb) {
-      return ElevatedButton(
-        onPressed: () => _navigateToQRScanner(context),
-        child: Text('Scan QR Code'),
-      );
-    } else {
-      return Text(
-        'QR Code scanning is not supported on this platform.',
-        style: TextStyle(color: Colors.red),
-      );
-    }
-  }
-
-  void _navigateToQRScanner(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QRScannerWebPage(),
-      ),
     );
   }
 
@@ -313,12 +314,25 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
     DateTime dateTime = timestamp.toDate();
     return DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
   }
+}
 
-  void _scanQRCode(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QRCodeScannerPage(),
+class QRScannerPage extends StatelessWidget {
+  final Function(String) onQRViewCreated;
+
+  QRScannerPage({required this.onQRViewCreated});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Scan QR Code'),
+      ),
+      body: MobileScanner(
+        onDetect: (barcode, args) {
+          final String code = barcode.rawValue ?? '';
+          onQRViewCreated(code);
+          Navigator.pop(context);
+        },
       ),
     );
   }
@@ -350,54 +364,4 @@ class Participant {
     required this.userId,
     required this.bladerName,
   });
-}
-
-class QRCodeScannerPage extends StatefulWidget {
-  @override
-  _QRCodeScannerPageState createState() => _QRCodeScannerPageState();
-}
-
-class _QRCodeScannerPageState extends State<QRCodeScannerPage> {
-  late QRViewController controller;
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Scan QR Code'),
-      ),
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            flex: 5,
-            child: QRView(
-              key: qrKey,
-              onQRViewCreated: _onQRViewCreated,
-            ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: Text('Align QR code within the frame to scan.'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _onQRViewCreated(QRViewController controller) {
-    this.controller = controller;
-    controller.scannedDataStream.listen((scanData) {
-      Navigator.pop(context,
-          scanData.code); // Return the scanned QR code to previous page
-    });
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
 }

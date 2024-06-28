@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:math';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class CreateBracketScreen extends StatefulWidget {
   final String tournamentId;
@@ -12,147 +12,52 @@ class CreateBracketScreen extends StatefulWidget {
 }
 
 class _CreateBracketScreenState extends State<CreateBracketScreen> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _playerNameController = TextEditingController();
   List<String> players = [];
   String selectedFormat = 'Single Elimination';
+
+  Future<void> _createChallongeTournament() async {
+    String apiUrl = 'http://localhost:64297/'; // Replace with your server URL
+
+    try {
+      final response = await http.post(Uri.parse(apiUrl),
+          headers: {
+            'Content-Type': 'application/json', // Ensure correct content type
+          },
+          body: jsonEncode({
+            'tournament[name]': 'Flutter Tournament',
+            'tournament[url]': 'flutter_tournament',
+            'tournament[tournament_type]': selectedFormat.toLowerCase(),
+            'tournament[open_signup]': 'true',
+            'tournament[description]': 'Flutter tournament description',
+            // Add more parameters as needed
+          }));
+
+      if (response.statusCode == 200) {
+        var jsonData = jsonDecode(response.body);
+        print('Tournament created: $jsonData');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Challonge Tournament created successfully')),
+        );
+      } else {
+        print('Failed to create tournament: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to create Challonge Tournament')),
+        );
+      }
+    } catch (e) {
+      print('Error creating tournament: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creating Challonge Tournament')),
+      );
+    }
+  }
 
   void _addPlayer() {
     setState(() {
       players.add(_playerNameController.text.trim());
       _playerNameController.clear();
     });
-  }
-
-  Future<void> _createBracket() async {
-    try {
-      if (players.length < 2) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Minimum 2 players required')),
-        );
-        return;
-      }
-
-      List<String> shuffledPlayers = List.from(players)..shuffle(Random());
-
-      Map<String, dynamic> matches = {};
-      if (selectedFormat == 'Single Elimination') {
-        matches = _createSingleEliminationBracket(shuffledPlayers);
-      } else if (selectedFormat == 'Double Elimination') {
-        matches = _createDoubleEliminationBracket(shuffledPlayers);
-      } else if (selectedFormat == 'Swiss') {
-        matches = _createSwissBracket(shuffledPlayers);
-      }
-
-      await _firestore
-          .collection('tournaments')
-          .doc(widget.tournamentId)
-          .update({
-        'bracket': matches,
-        'type': selectedFormat,
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Bracket created successfully')),
-      );
-
-      Navigator.pop(context);
-    } catch (e) {
-      print('Error creating bracket: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creating bracket')),
-      );
-    }
-  }
-
-  Map<String, dynamic> _createSingleEliminationBracket(List<String> players) {
-    Map<String, dynamic> matches = {};
-    int matchNumber = 1;
-    for (int i = 0; i < players.length; i += 2) {
-      matches['Match $matchNumber'] = {
-        'player1': players[i],
-        'player2': players.length > i + 1 ? players[i + 1] : 'Bye',
-        'winner': '',
-      };
-      matchNumber++;
-    }
-    return matches;
-  }
-
-  Map<String, dynamic> _createDoubleEliminationBracket(List<String> players) {
-    Map<String, dynamic> matches = {};
-    int matchNumber = 1;
-    int round = 1;
-
-    // First round
-    for (int i = 0; i < players.length; i += 2) {
-      matches['Round $round - Match $matchNumber'] = {
-        'player1': players[i],
-        'player2': players.length > i + 1 ? players[i + 1] : 'Bye',
-        'winner': '',
-        'loser': ''
-      };
-      matchNumber++;
-    }
-
-    // Simulate progression for winner and loser brackets (simplified version)
-    for (int i = 1; i <= players.length; i++) {
-      matches['Winners Round ${round + i} - Match $matchNumber'] = {
-        'player1': 'Winner of Match ${matchNumber - i * 2 + 1}',
-        'player2': 'Winner of Match ${matchNumber - i * 2 + 2}',
-        'winner': '',
-        'loser': ''
-      };
-      matchNumber++;
-
-      matches['Losers Round ${round + i} - Match $matchNumber'] = {
-        'player1': 'Loser of Match ${matchNumber - i * 2 + 1}',
-        'player2': 'Loser of Match ${matchNumber - i * 2 + 2}',
-        'winner': '',
-        'loser': ''
-      };
-      matchNumber++;
-    }
-
-    return matches;
-  }
-
-  Map<String, dynamic> _createSwissBracket(List<String> players) {
-    Map<String, dynamic> matches = {};
-    int matchNumber = 1;
-    int round = 1;
-    int rounds = (log(players.length) / log(2)).ceil();
-
-    for (int r = 1; r <= rounds; r++) {
-      matches['Round $round'] = [];
-      List<String> roundPlayers = List.from(players);
-
-      while (roundPlayers.length > 1) {
-        String player1 = roundPlayers.removeLast();
-        String player2 = roundPlayers.removeLast();
-        matches['Round $round'].add({
-          'match': 'Match $matchNumber',
-          'player1': player1,
-          'player2': player2,
-          'winner': '',
-        });
-        matchNumber++;
-      }
-
-      // If odd number of players, one gets a bye
-      if (roundPlayers.isNotEmpty) {
-        matches['Round $round'].add({
-          'match': 'Match $matchNumber',
-          'player1': roundPlayers.removeLast(),
-          'player2': 'Bye',
-          'winner': '',
-        });
-        matchNumber++;
-      }
-      round++;
-    }
-
-    return matches;
   }
 
   @override
@@ -209,8 +114,8 @@ class _CreateBracketScreenState extends State<CreateBracketScreen> {
             SizedBox(height: 20.0),
             Center(
               child: ElevatedButton(
-                onPressed: _createBracket,
-                child: Text('Create Bracket'),
+                onPressed: _createChallongeTournament,
+                child: Text('Create Challonge Tournament'),
               ),
             ),
           ],
