@@ -54,6 +54,7 @@ dependencies:
   qr_code_scanner: ^0.4.0
   fl_chart: ^0.41.0  # Replace with the latest version if needed
   mobile_scanner: ^2.0.0
+  
 
 
 
