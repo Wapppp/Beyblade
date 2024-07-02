@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'auth_service.dart'; // Adjust the path as needed
-import 'forgot_password_page.dart'; // Import the ForgotPasswordPage
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'auth_service.dart';
+import 'forgot_password_page.dart';
+import 'organizer_login_page.dart';
+import 'sponsors_home_page.dart';
+import 'agency_home_page.dart';
+import 'judge/judge_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -31,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (user != null) {
         if (user.emailVerified) {
-          _navigateToHomePage();
+          await _checkUserRole(user.uid);
         } else {
           setState(() {
             _errorMessage = 'Please verify your email before logging in.';
@@ -54,12 +59,63 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-   void _navigateToHomePage() {
-    Navigator.pushReplacementNamed(context, '/home');
+  Future<void> _checkUserRole(String uid) async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (userDoc.exists) {
+      Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
+      String? role = userData?['role'];
+
+      if (role == 'sponsors') {
+        _navigateToSponsorsHomePage();
+      } else if (role == 'agency') {
+        _navigateToAgencyHomePage();
+      } else if (role == 'judge') {
+        _navigateToJudgeHomePage();
+      } else {
+        setState(() {
+          _errorMessage = 'You are not allowed to login here.';
+        });
+        await _authService.signOut();
+      }
+    } else {
+      setState(() {
+        _errorMessage = 'User data not found.';
+      });
+      await _authService.signOut();
+    }
+  }
+
+  void _navigateToSponsorsHomePage() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => SponsorsHomePage()),
+    );
+  }
+
+  void _navigateToAgencyHomePage() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => AgencyHomePage()),
+    );
+  }
+
+  void _navigateToJudgeHomePage() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => JudgeHomePage()),
+    );
   }
 
   void _navigateToForgotPassword() {
     Navigator.push(context, MaterialPageRoute(builder: (context) => ForgotPasswordPage()));
+  }
+
+  void _navigateToOrganizerLoginPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => OrganizerLoginPage()),
+    );
   }
 
   @override
@@ -145,22 +201,18 @@ class _LoginPageState extends State<LoginPage> {
                             : ElevatedButton(
                                 onPressed: _login,
                                 style: ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.all<Color>(
+                                  backgroundColor: MaterialStateProperty.all<Color>(
                                     Colors.orange,
                                   ),
-                                  shape: MaterialStateProperty.all<
-                                      RoundedRectangleBorder>(
+                                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10.0),
                                     ),
                                   ),
-                                  padding:
-                                      MaterialStateProperty.all<EdgeInsets>(
+                                  padding: MaterialStateProperty.all<EdgeInsets>(
                                     EdgeInsets.symmetric(horizontal: 0),
                                   ),
-                                  elevation:
-                                      MaterialStateProperty.all<double>(5),
+                                  elevation: MaterialStateProperty.all<double>(5),
                                 ),
                                 child: Ink(
                                   decoration: BoxDecoration(
@@ -216,6 +268,13 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _navigateToOrganizerLoginPage,
+        backgroundColor: Colors.orange,
+        icon: Icon(Icons.group_add),
+        label: Text("Organizer Login"),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 

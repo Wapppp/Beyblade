@@ -1,3 +1,8 @@
+import 'package:beyblade/pages/agency_home_page.dart';
+import 'package:beyblade/pages/judge/judge_home_page.dart';
+import 'package:beyblade/pages/news_page.dart';
+import 'pages/sponsors_home_page.dart';
+import 'package:beyblade/pages/upgrade_account_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -16,14 +21,20 @@ import 'pages/join_club_page.dart';
 import 'pages/club_detail_page.dart';
 import 'pages/admin/admin_login_page.dart';
 import 'pages/admin/admin_page.dart';
+import 'pages/admin/news_management_page.dart';
 import 'pages/organizer_page.dart';
 import 'pages/organizer_login_page.dart';
 import 'pages/organizer_register_page.dart';
-
+import 'pages/news_page.dart';
 // Import your local dependencies
 import 'pages/data/injection_container.dart'; // Adjust the path as per your structure
 import 'pages/data/navigation_service.dart';
 import 'pages/data/home_view_model.dart';
+import 'pages/sponsors_home_page.dart';
+import 'pages/upgrade_account_page.dart';
+import 'pages/judge/judge_home_page.dart';
+import 'pages/agency_home_page.dart';
+import 'pages/create_agency_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,6 +88,14 @@ class MyApp extends StatelessWidget {
           '/organizer': (context) => OrganizerPage(),
           '/organizer_login': (context) => OrganizerLoginPage(),
           '/register_organizer': (context) => OrganizerRegisterPage(),
+          '/news': (context) => NewsPage(),
+        '/agencyhome': (context) => AgencyHomePage(),
+    '/sponsorshome': (context) => SponsorsHomePage(),
+    '/judgehome': (context) => JudgeHomePage(),
+    '/upgrade': (context) => UpgradeAccountPage(),
+    '/createagency': (context) => CreateAgencyPage()
+
+
         },
         navigatorKey:
             sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt

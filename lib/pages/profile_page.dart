@@ -1,3 +1,4 @@
+
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,6 +22,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _contactNoController = TextEditingController();
   final TextEditingController _bladerNameController = TextEditingController();
   final TextEditingController _nationalityController = TextEditingController();
+   final TextEditingController _bioController = TextEditingController();
 
   bool isEditMode = false;
   String? _imageUrl;
@@ -106,6 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   'blader_name': _bladerNameController.text,
                   'profile_picture': _imageUrl,
                   'nationality': _nationalityController.text,
+                  'bio': _bioController.text,
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Profile updated successfully')),
@@ -130,6 +133,7 @@ class _ProfilePageState extends State<ProfilePage> {
           if (!snapshot.hasData || snapshot.data!.data() == null) {
             return Center(child: Text('No data available'));
           }
+          
 
           Map<String, dynamic> userData = snapshot.data!.data()!;
 
@@ -144,6 +148,8 @@ class _ProfilePageState extends State<ProfilePage> {
             _bladerNameController.text = userData['blader_name'] ?? '';
             _imageUrl = userData['profile_picture'] ?? '';
             _nationalityController.text = userData['nationality'] ?? '';
+              _bioController.text = userData['bio'] ?? '';
+            
           }
 
           return SingleChildScrollView(
@@ -174,6 +180,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   'Clubs Joined',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
+                 buildBioField(),
+                SizedBox(height: 20),
                 SizedBox(height: 10),
                 if (_clubs.isNotEmpty)
                   ..._clubs.map((club) => buildClubCard(club)),
@@ -362,6 +370,35 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+    Widget buildBioField() {
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bio',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            isEditMode
+                ? TextField(
+                    controller: _bioController,
+                    maxLines: 3, // Adjust as needed
+                    decoration: InputDecoration(
+                      hintText: 'Describe yourself...',
+                      border: OutlineInputBorder(),
+                    ),
+                  )
+                : Text(_bioController.text),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget buildClubCard(Map<String, dynamic> club) {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 10),
@@ -451,6 +488,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _contactNoController.dispose();
     _bladerNameController.dispose();
     _nationalityController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 }

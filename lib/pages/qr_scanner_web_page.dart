@@ -49,7 +49,6 @@ class _QRScannerWebPageState extends State<QRScannerWebPage> {
       setState(() {
         isLoading = true;
       });
-      await _uploadQRCodeToStorage(scanData.code);
     });
   }
 

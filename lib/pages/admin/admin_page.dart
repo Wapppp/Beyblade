@@ -1,10 +1,14 @@
+
+import 'package:beyblade/pages/admin/news_management_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_management_page.dart'; // Import the new file
 import 'club_management.dart';
 import 'tournaments_manage_page.dart';
-import 'manage_rankings.dart'; // Import the new file
+import 'manage_rankings.dart';
+import 'sponsors_management.dart';
+import 'agency_management.dart';
 
 class AdminPage extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -148,6 +152,48 @@ class AdminPage extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ManageRankingsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                   ListTile(
+                    title: Text('News Management',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    tileColor: Colors.grey[850],
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NewsManagementPage(),
+                        ),
+                      );
+                    },
+                  ),
+                    ListTile(
+                    title: Text('Sponsors Management',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    tileColor: Colors.grey[850],
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SponsorsManagementPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    title: Text('Agency Management',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    tileColor: Colors.grey[850],
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AgencyManagementPage(),
                         ),
                       );
                     },
