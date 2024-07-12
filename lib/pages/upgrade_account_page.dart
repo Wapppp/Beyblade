@@ -12,53 +12,63 @@ class _UpgradeAccountPageState extends State<UpgradeAccountPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _upgradeDetailsController = TextEditingController();
   String _selectedRole = 'Agency'; // Default role option
+void _assignRole(String role) async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userSnapshot = await _firestore.collection('users').doc(user.uid).get();
+      if (userSnapshot.exists) {
+        final userData = userSnapshot.data() as Map<String, dynamic>;
+        final currentRole = userData['role'];
 
-  void _assignRole(String role) async {
-    try {
-      // Get the current user
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        // Update user's role in Firestore
-        await _firestore.collection('users').doc(user.uid).update({
-          'role': role,
-        });
+        if (currentRole == null || currentRole == 'users') {
+          // Allow upgrade
+          await _firestore.collection('users').doc(user.uid).update({
+            'role': role,
+          });
 
-        // Show success message or navigate back
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Role assigned successfully')),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Role assigned successfully')),
+          );
 
-        // Navigate to respective home page based on role
-        switch (role) {
-          case 'agency':
-            Navigator.pushReplacementNamed(context, '/createagency');
-            break;
-          case 'sponsors':
-            Navigator.pushReplacementNamed(context, '/sponsorshome');
-            break;
-          case 'judge':
-            Navigator.pushReplacementNamed(context, '/judgehome');
-            break;
-          default:
-            // Navigate to default home page or handle as per your app logic
-            Navigator.pushReplacementNamed(context, '/home');
-            break;
+          // Navigate based on the assigned role
+          switch (role) {
+            case 'agency':
+              Navigator.pushReplacementNamed(context, '/createagency');
+              break;
+            case 'sponsors':
+              Navigator.pushReplacementNamed(context, '/createsponsors');
+              break;
+            case 'judge':
+              Navigator.pushReplacementNamed(context, '/judgehome');
+              break;
+            default:
+              Navigator.pushReplacementNamed(context, '/home');
+              break;
+          }
+        } else {
+          // User already has a role other than 'users'
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('You already have a role assigned')),
+          );
         }
-
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User not logged in')),
+          SnackBar(content: Text('User data not found')),
         );
       }
-    } catch (e) {
-      // Handle error
-      print('Error assigning role: $e');
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to assign role')),
+        SnackBar(content: Text('User not logged in')),
       );
     }
+  } catch (e) {
+    print('Error assigning role: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to assign role')),
+    );
   }
-
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -53,6 +53,9 @@ dependencies:
   image: ^4.2.0
   qr_code_scanner: ^1.0.1
   fl_chart: ^0.68.0  # Replace with the latest version if needed
+  mobile_scanner: ^2.0.0
+  image_picker: ^1.1.2
+  flutter_email_sender: ^6.0.3
 
 
 
@@ -82,8 +85,7 @@ flutter:
   assets:
       - assets/hehe.png
       - assets/google.png
-      - assets/file2.png
-
+      - assets/default_profile.png
 
 
   # the material Icons class.

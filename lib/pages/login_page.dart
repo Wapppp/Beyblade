@@ -6,7 +6,8 @@ import 'forgot_password_page.dart';
 import 'organizer_login_page.dart';
 import 'sponsors_home_page.dart';
 import 'agency_home_page.dart';
-import 'judge/judge_home_page.dart';
+import 'judge_home_page.dart';
+import 'home_page.dart'; // Import the HomePage widget
 
 class LoginPage extends StatefulWidget {
   @override
@@ -72,6 +73,8 @@ class _LoginPageState extends State<LoginPage> {
         _navigateToAgencyHomePage();
       } else if (role == 'judge') {
         _navigateToJudgeHomePage();
+      } else if (role == null || role.isEmpty) {
+        _navigateToHomePage(); // Navigate to HomePage if no role is found
       } else {
         setState(() {
           _errorMessage = 'You are not allowed to login here.';
@@ -104,6 +107,13 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => JudgeHomePage()),
+    );
+  }
+
+  void _navigateToHomePage() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => HomePage()),
     );
   }
 

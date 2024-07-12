@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -23,156 +24,127 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
     super.initState();
     _loadCurrentUser();
   }
+void _loadCurrentUser() async {
+  final user = _auth.currentUser;
+  if (user != null) {
+    try {
+      final agencySnapshot = await _firestore
+          .collection('agencies')
+          .where('created_by', isEqualTo: user.uid)
+          .get();
 
-  void _loadCurrentUser() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      final userData = await _firestore.collection('users').doc(user.uid).get();
-      if (userData.exists) {
+      if (agencySnapshot.docs.isNotEmpty) {
         setState(() {
-          _agencyName = userData.get('blader_name') ?? user.displayName ?? 'Agency';
-          _userRole = userData.get('role') ?? '';
-          _bladerName = userData.get('blader_name') ?? user.displayName ?? 'User';
+          _agencyName = agencySnapshot.docs.first.get('agency_name') ?? 'Agency';
+          // Check if 'role' field exists before setting
+          if (agencySnapshot.docs.first.data().containsKey('role')) {
+            _userRole = agencySnapshot.docs.first.get('role');
+          } else {
+            _userRole = ''; // Handle default or fallback role here
+          }
+        });
+      } else {
+        // If no agency found for the user, set default values
+        setState(() {
+          _agencyName = 'Agency'; // Default name if not found
+          _userRole = '';
         });
       }
+    } catch (e) {
+      print('Error fetching agency information: $e');
+      // Handle error if necessary
     }
   }
-
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
       body: _buildBody(),
-      drawer: _buildDrawer(),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: _buildBottomNavigationBar(), // Integrated bottom navigation bar
+      backgroundColor: Colors.grey[900], // Setting background color
     );
   }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: Text('Agency Profile', style: TextStyle(color: Colors.grey[300])),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.logout),
-          onPressed: _logout,
-        ),
-      ],
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.orange, Colors.black],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+AppBar _buildAppBar() {
+  return AppBar(
+    automaticallyImplyLeading: false, // This will remove the back button
+    title: Text(
+      _agencyName, // Displaying agency_name as the title
+      style: TextStyle(color: Colors.grey[300], fontSize: 24),
+    ),
+    actions: [
+      _buildUserDropdown(), // Dropdown for user actions
+    ],
+    flexibleSpace: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.orange, Colors.black],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
+ 
   Widget _buildBody() {
-    return FutureBuilder<DocumentSnapshot>(
-      future: _firestore.collection('users').doc(_auth.currentUser!.uid).get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return Center(child: Text('User not found.'));
-        }
-
-        var userData = snapshot.data!.data() as Map<String, dynamic>;
-        if (userData['role'] != 'agency') {
-          return Center(child: Text('Access Denied'));
-        }
-
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Welcome, $_agencyName!',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              SizedBox(height: 20),
-              // Add your main content here
-              Text(
-                'Your Agency Content Goes Here',
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-        );
-      },
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/inviteplayers'); // Navigate to InvitePlayersPage
+        },
+        child: Text('Invite Players', style: TextStyle(fontSize: 18)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange,
+          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
     );
   }
 
-  Drawer _buildDrawer() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          DrawerHeader(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.orange, Colors.black],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+  DropdownButtonHideUnderline _buildUserDropdown() {
+    if (_auth.currentUser != null) {
+      return DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: 'Hello, $_bladerName',
+          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]), // Adjust icon color if needed
+          onChanged: (String? newValue) {
+            if (newValue == 'Logout') {
+              _signOut(); // Call _signOut method here
+            } else if (newValue == 'My Profile') {
+              Navigator.pushNamed(context, '/profile');
+            } else if (newValue == 'Agency Profile') {
+              Navigator.pushNamed(context, '/agencyprofile'); // Navigate to UpgradeAccountPage
+            }
+          },
+          items: <String>[
+            'Hello, $_bladerName',
+            'My Profile',
+            'Agency Profile', // Add this option
+            'Logout'
+          ].map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(
+                value,
+                style: TextStyle(color: Colors.grey[500]), // Set text color to white
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: <Widget>[
-                Text(
-                  '$_agencyName',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: Icon(Icons.home),
-            title: Text('Home'),
-            onTap: () {
-              Navigator.pop(context);
-              _onItemTapped(0);
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.person),
-            title: Text('Profile'),
-            onTap: () {
-              Navigator.pop(context);
-              _onItemTapped(1);
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.settings),
-            title: Text('Settings'),
-            onTap: () {
-              Navigator.pop(context);
-              _onItemTapped(2);
-            },
-          ),
-        ],
-      ),
-    );
+            );
+          }).toList(),
+        ),
+      );
+    } else {
+      return DropdownButtonHideUnderline(child: Container());
+    }
   }
 
   BottomNavigationBar _buildBottomNavigationBar() {
     return BottomNavigationBar(
       currentIndex: _selectedIndex,
-      onTap: _onItemTapped,
-      backgroundColor: Colors.white,
+      onTap: _onBottomNavigationBarTapped,
+      backgroundColor: Colors.grey[900], // Keeping the background color
       selectedItemColor: Colors.orange,
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
@@ -182,36 +154,50 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile',
+          icon: Icon(Icons.event),
+          label: 'Tournaments',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
+          icon: Icon(Icons.leaderboard),
+          label: 'Rankings',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.group),
+          label: 'Club',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.newspaper),
+          label: 'News',
         ),
       ],
     );
   }
 
-  void _onItemTapped(int index) {
+  void _onBottomNavigationBarTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
     // Handle navigation based on index
     switch (index) {
       case 0:
-        // Navigate to home page or perform any other action
+        sl<NavigationService>().navigatorKey.currentState!.pushNamed('/agencyhome');
         break;
       case 1:
         Navigator.pushNamed(context, '/profile');
         break;
       case 2:
-        Navigator.pushNamed(context, '/settings');
+        Navigator.pushNamed(context, '/rankings');
+        break;
+      case 3:
+        Navigator.pushNamed(context, '/club');
+        break;
+      case 4:
+        Navigator.pushNamed(context, '/news');
         break;
     }
   }
 
-  void _logout() async {
+  void _signOut() async {
     await _auth.signOut();
     Navigator.pushReplacement(
       context,

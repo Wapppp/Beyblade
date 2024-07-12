@@ -1,11 +1,13 @@
+
+
 class Agency {
-  final String name;
+  final String agency_name;
   final String contact;
-  final String email;
+  final String agency_email;
 
   Agency({
-    required this.name,
+    required this.agency_name,
     required this.contact,
-    required this.email,
+    required this.agency_email,
   });
 }

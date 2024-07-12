@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'login_page.dart';
+import 'invitations_dialog.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -27,6 +28,8 @@ class _ProfilePageState extends State<ProfilePage> {
   bool isEditMode = false;
   String? _imageUrl;
   List<Map<String, dynamic>> _clubs = [];
+    List<Map<String, dynamic>> invitationsList = [];
+
 
   @override
   void initState() {
@@ -39,6 +42,37 @@ class _ProfilePageState extends State<ProfilePage> {
     if (user == null) {
       return;
     }
+
+
+
+  void showInvitationsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Invitations'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: invitationsList.map((invitation) {
+              return ListTile(
+                title: Text('Invitation from ${invitation['agencyName']}'),
+                subtitle: Text('Contact: ${invitation['agencyEmail']}'),
+                // Add actions like accept or delete here if needed
+              );
+            }).toList(),
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
 
     // Fetch clubs where the user is a member
     QuerySnapshot<Map<String, dynamic>> clubsSnapshot = await FirebaseFirestore
@@ -80,6 +114,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return LoginPage();
     }
 
+
     Stream<DocumentSnapshot<Map<String, dynamic>>> userDataStream =
         FirebaseFirestore.instance
             .collection('users')
@@ -119,6 +154,10 @@ class _ProfilePageState extends State<ProfilePage> {
               });
             },
           ),
+          
+      
+    
+
         ],
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:beyblade/pages/login_page.dart'; // Replace with your login page import
 import 'data/navigation_service.dart';
 import 'data/injection_container.dart';
 
@@ -13,8 +14,9 @@ class _SponsorsHomePageState extends State<SponsorsHomePage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   int _selectedIndex = 0;
-  String _bladerName = '';
+  String _sponsorName = '';
   String _userRole = '';
+  String _bladerName = '';
 
   @override
   void initState() {
@@ -25,142 +27,56 @@ class _SponsorsHomePageState extends State<SponsorsHomePage> {
   void _loadCurrentUser() async {
     final user = _auth.currentUser;
     if (user != null) {
-      final userData = await _firestore.collection('users').doc(user.uid).get();
-      if (userData.exists) {
-        setState(() {
-          _bladerName = userData.get('blader_name') ?? user.displayName ?? 'User';
-          _userRole = userData.get('role') ?? '';
-        });
+      try {
+        final sponsorSnapshot = await _firestore
+            .collection('sponsors')
+            .where('created_by', isEqualTo: user.uid)
+            .get();
+
+        if (sponsorSnapshot.docs.isNotEmpty) {
+          setState(() {
+            _sponsorName = sponsorSnapshot.docs.first.get('sponsor_name') ?? 'Sponsor';
+            // Check if 'role' field exists before setting
+            if (sponsorSnapshot.docs.first.data().containsKey('role')) {
+              _userRole = sponsorSnapshot.docs.first.get('role');
+            } else {
+              _userRole = ''; // Handle default or fallback role here
+            }
+          });
+        } else {
+          // If no sponsor found for the user, set default values
+          setState(() {
+            _sponsorName = 'Sponsor'; // Default name if not found
+            _userRole = '';
+          });
+        }
+      } catch (e) {
+        print('Error fetching sponsor information: $e');
+        // Handle error if necessary
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<DocumentSnapshot>(
-      future: _firestore.collection('users').doc(_auth.currentUser!.uid).get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            appBar: _buildAppBar(),
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Scaffold(
-            appBar: _buildAppBar(),
-            body: Center(child: Text('Error: ${snapshot.error}')),
-          );
-        }
-
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return Scaffold(
-            appBar: _buildAppBar(),
-            body: Center(child: Text('User not found.')),
-          );
-        }
-
-        var userData = snapshot.data!.data() as Map<String, dynamic>;
-        if (userData['role'] != 'sponsors') {
-          return Scaffold(
-            appBar: _buildAppBar(),
-            body: Center(child: Text('Access Denied')),
-          );
-        }
-
-        return Scaffold(
-          appBar: _buildAppBar(),
-          body: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.all(20),
-                  color: Colors.grey[900],
-                  child: FutureBuilder<QuerySnapshot>(
-                    future: _firestore.collection('sponsors').get(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
-                      }
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      }
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return Center(child: Text('No sponsors found.'));
-                      }
-
-                      // Process snapshot data
-                      List<DocumentSnapshot> sponsors = snapshot.data!.docs;
-
-                      return ListView.builder(
-                        itemCount: sponsors.length,
-                        itemBuilder: (context, index) {
-                          var sponsor = sponsors[index].data() as Map<String, dynamic>;
-                          return ListTile(
-                            title: Text(
-                              sponsor['name'],
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            subtitle: Text(
-                              sponsor['contact'],
-                              style: TextStyle(color: Colors.grey[400]),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                            tileColor: Colors.grey[850],
-                            onTap: () {
-                              // Handle onTap if needed
-                            },
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Container(
-                color: Colors.white,
-                child: BottomNavigationBar(
-                  currentIndex: _selectedIndex,
-                  backgroundColor: Colors.white,
-                  items: [
-                    _buildBottomNavigationBarItem(Icons.home, 'Home'),
-                    _buildBottomNavigationBarItem(Icons.event, 'Tournaments'),
-                    _buildBottomNavigationBarItem(Icons.leaderboard, 'Rankings'),
-                    _buildBottomNavigationBarItem(Icons.group, 'Club'),
-                    _buildBottomNavigationBarItem(Icons.newspaper, 'News'),
-                  ],
-                  onTap: (index) {
-                    setState(() {
-                      _selectedIndex = index;
-                    });
-                    _handleNavigation(index);
-                  },
-                  selectedItemColor: Colors.orange,
-                  unselectedItemColor: Colors.grey,
-                  type: BottomNavigationBarType.fixed,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: _buildBody(),
+      bottomNavigationBar: _buildBottomNavigationBar(), // Integrated bottom navigation bar
+      backgroundColor: Colors.grey[900], // Setting background color
     );
   }
 
   AppBar _buildAppBar() {
     return AppBar(
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Sponsors List',
-              style: TextStyle(color: Colors.grey[300]),
-            ),
-          ),
-          _buildUserDropdown(),
-        ],
+      automaticallyImplyLeading: false, // This will remove the back button
+      title: Text(
+        _sponsorName, // Displaying sponsor_name as the title
+        style: TextStyle(color: Colors.grey[300], fontSize: 24),
       ),
+      actions: [
+        _buildUserDropdown(), // Dropdown for user actions
+      ],
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -173,70 +89,120 @@ class _SponsorsHomePageState extends State<SponsorsHomePage> {
     );
   }
 
-  BottomNavigationBarItem _buildBottomNavigationBarItem(IconData icon, String label) {
-    return BottomNavigationBarItem(
-      icon: Icon(icon),
-      label: label,
+  Widget _buildBody() {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/inviteplayers'); // Navigate to InvitePlayersPage
+        },
+        child: Text('Invite Players', style: TextStyle(fontSize: 18)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange,
+          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
     );
   }
 
-  void _handleNavigation(int index) {
+  DropdownButtonHideUnderline _buildUserDropdown() {
+    if (_auth.currentUser != null) {
+      return DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: 'Hello, $_bladerName',
+          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]), // Adjust icon color if needed
+          onChanged: (String? newValue) {
+            if (newValue == 'Logout') {
+              _signOut(); // Call _signOut method here
+            } else if (newValue == 'My Profile') {
+              Navigator.pushNamed(context, '/profile');
+            } else if (newValue == 'Sponsor Profile') {
+              Navigator.pushNamed(context, '/sponsorprofile'); // Navigate to SponsorProfilePage
+            }
+          },
+          items: <String>[
+            'Hello, $_bladerName',
+            'My Profile',
+            'Sponsor Profile', // Add this option
+            'Logout'
+          ].map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(
+                value,
+                style: TextStyle(color: Colors.grey[500]), // Set text color to white
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    } else {
+      return DropdownButtonHideUnderline(child: Container());
+    }
+  }
+
+  BottomNavigationBar _buildBottomNavigationBar() {
+    return BottomNavigationBar(
+      currentIndex: _selectedIndex,
+      onTap: _onBottomNavigationBarTapped,
+      backgroundColor: Colors.grey[900], // Keeping the background color
+      selectedItemColor: Colors.orange,
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
+      items: const <BottomNavigationBarItem>[
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.event),
+          label: 'Tournaments',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.leaderboard),
+          label: 'Rankings',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.group),
+          label: 'Club',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.newspaper),
+          label: 'News',
+        ),
+      ],
+    );
+  }
+
+  void _onBottomNavigationBarTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    // Handle navigation based on index
     switch (index) {
       case 0:
         sl<NavigationService>().navigatorKey.currentState!.pushNamed('/sponsorshome');
         break;
       case 1:
-        sl<NavigationService>().navigateTo('/tournaments');
+        Navigator.pushNamed(context, '/tournaments');
         break;
       case 2:
-        sl<NavigationService>().navigateTo('/rankings');
+        Navigator.pushNamed(context, '/rankings');
         break;
       case 3:
-        sl<NavigationService>().navigatorKey.currentState!.pushNamed('/club');
+        Navigator.pushNamed(context, '/club');
         break;
-      case 4: // New case for '/news'
-        sl<NavigationService>().navigateTo('/news');
+      case 4:
+        Navigator.pushNamed(context, '/news');
         break;
     }
   }
-Widget _buildUserDropdown() {
-  if (_auth.currentUser != null) {
-    return DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: 'Hello, $_bladerName',
-        icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]), // Adjust icon color if needed
-        onChanged: (String? newValue) {
-          if (newValue == 'Logout') {
-            _signOut();
-          } else if (newValue == 'My Profile') {
-            Navigator.pushNamed(context, '/profile');
-          } else if (newValue == 'Upgrade Your Account') {
-            Navigator.pushNamed(context, '/upgrade'); // Navigate to UpgradeAccountPage
-          }
-        },
-        items: <String>[
-          'Hello, $_bladerName',
-          'My Profile',
-          'Upgrade Your Account', // Add this option
-          'Logout'
-        ].map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(
-              value,
-              style: TextStyle(color: Colors.grey[500]), // Set text color to white
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  } else {
-    return Container();
-  }
-}
 
-  Future<void> _signOut() async {
+  void _signOut() async {
     await _auth.signOut();
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+    );
   }
 }
