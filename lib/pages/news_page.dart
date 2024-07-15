@@ -35,98 +35,119 @@ class NewsPage extends StatelessWidget {
             );
           }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (BuildContext context, int index) {
-              var newsItem = snapshot.data!.docs[index];
-              Map<String, dynamic>? data =
-                  newsItem.data() as Map<String, dynamic>?;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    var newsItem = snapshot.data!.docs[index];
+                    Map<String, dynamic>? data =
+                        newsItem.data() as Map<String, dynamic>?;
 
-              DateTime? date =
-                  data != null ? (data['date'] as Timestamp).toDate() : null;
+                    DateTime? date =
+                        data != null ? (data['date'] as Timestamp).toDate() : null;
 
-              return InkWell(
-                onTap: () {
-                  _showNewsDetails(context, data);
-                },
-                child: Card(
-                  elevation: 4,
-                  margin: EdgeInsets.fromLTRB(
-                      10, 10, 10, 20), // Added bottom margin
-                  color: Colors.grey[850], // Dark grey background
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (data != null && data.containsKey('image'))
-                        Container(
-                          height: 200,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(12),
-                            ),
-                            image: DecorationImage(
-                              image: NetworkImage(data['image']),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.bottomCenter,
-                                      end: Alignment.topCenter,
-                                      colors: [
-                                        Colors.black.withOpacity(0.8),
-                                        Colors.transparent,
-                                      ],
-                                    ),
+                    return InkWell(
+                      onTap: () {
+                        _showNewsDetails(context, data);
+                      },
+                      child: Card(
+                        elevation: 4,
+                        margin: EdgeInsets.fromLTRB(
+                            10, 10, 10, 20), // Added bottom margin
+                        color: Colors.grey[850], // Dark grey background
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (data != null && data.containsKey('image'))
+                              Container(
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(12),
                                   ),
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: 10,
-                                    horizontal: 16,
+                                  image: DecorationImage(
+                                    image: NetworkImage(data['image']),
+                                    fit: BoxFit.cover,
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      data.containsKey('title')
-                                          ? data['title']
-                                          : 'Title not available',
-                                      style: TextStyle(
-                                        fontSize: 24, // Larger font size
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                ),
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      bottom: 0,
+                                      left: 0,
+                                      right: 0,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.bottomCenter,
+                                            end: Alignment.topCenter,
+                                            colors: [
+                                              Colors.black.withOpacity(0.8),
+                                              Colors.transparent,
+                                            ],
+                                          ),
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 10,
+                                          horizontal: 16,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            data.containsKey('title')
+                                                ? data['title']
+                                                : 'Title not available',
+                                            style: TextStyle(
+                                              fontSize: 24, // Larger font size
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
+                                  ],
+                                ),
+                              ),
+                            if (date != null) // Display publication date if available
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  'Published on: ${DateFormat('MMMM dd, yyyy').format(date)}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                          ],
                         ),
-                      if (date != null) // Display publication date if available
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'Published on: ${DateFormat('MMMM dd, yyyy').format(date)}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ),
-                    ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                color: Colors.grey[900], // Background color for the banner
+                child: Center(
+                  child: Text(
+                    "What's New in BBC?",
+                    style: TextStyle(
+                      color: Colors.orange, // Text color matching the theme
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              );
-            },
+              ),
+            ],
           );
         },
       ),

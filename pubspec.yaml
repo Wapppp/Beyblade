@@ -51,8 +51,8 @@ dependencies:
   path_provider: ^2.0.7
   permission_handler: ^11.3.1
   image: ^4.2.0
-  qr_code_scanner: ^0.4.0
-  fl_chart: ^0.41.0  # Replace with the latest version if needed
+  qr_code_scanner: ^1.0.1
+  fl_chart: ^0.68.0  # Replace with the latest version if needed
   mobile_scanner: ^2.0.0
   flutter_svg_provider: ^1.0.0
   webview_flutter: ^2.0.13 # or the latest version
@@ -60,12 +60,13 @@ dependencies:
   flutter_webview_plugin: ^0.4.0
   qr_code_tools: 0.1.0
   image_picker: 1.1.2
-  flutter_barcode_sdk: 2.2.6
 
   flutter_html: 3.0.0-beta.2
   
 
   
+  flutter_email_sender: ^6.0.3
+
 
 
 
@@ -94,6 +95,7 @@ flutter:
   assets:
       - assets/hehe.png
       - assets/google.png
+      - assets/default_profile.png
 
 
   # the material Icons class.

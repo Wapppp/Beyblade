@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'data/injection_container.dart'; // Import dependency injection container
 import 'data/navigation_service.dart';
 import 'package:intl/intl.dart'; // Import the intl package for date formatting
+import 'upgrade_account_page.dart'; // Import the UpgradeAccountPage
 
 class TournamentEvent {
   final String id;
@@ -46,29 +47,33 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _loadCurrentUser() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final userData = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      if (userData.exists) {
-        setState(() {
-          _user = user;
-          _bladerName =
-              userData.get('blader_name') ?? user.displayName ?? 'Guest';
-          _profilePictureUrl =
-              userData.get('profile_picture') ?? user.photoURL ?? '';
-        });
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userData = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (userData.exists) {
+          setState(() {
+            _user = user;
+            _bladerName =
+                userData.get('blader_name') ?? user.displayName ?? 'Guest';
+            _profilePictureUrl =
+                userData.get('profile_picture') ?? user.photoURL ?? '';
+          });
+        } else {
+          print('User data not found for uid: ${user.uid}');
+        }
       } else {
-        print('User data not found for uid: ${user.uid}');
+        setState(() {
+          _user = null;
+          _bladerName = 'Guest';
+          _profilePictureUrl = '';
+        });
       }
-    } else {
-      setState(() {
-        _user = null;
-        _bladerName = 'Guest';
-        _profilePictureUrl = '';
-      });
+    } catch (e) {
+      print('Error loading user data: $e');
     }
   }
 
@@ -120,6 +125,7 @@ class _HomePageState extends State<HomePage> {
           _buildBottomNavigationBarItem(Icons.sports_esports, 'Tournaments'),
           _buildBottomNavigationBarItem(Icons.format_list_numbered, 'Rankings'),
           _buildBottomNavigationBarItem(Icons.people, 'Club'),
+          _buildBottomNavigationBarItem(Icons.newspaper, 'News'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.orange,
@@ -139,7 +145,7 @@ class _HomePageState extends State<HomePage> {
             radius: 20,
             backgroundImage: _profilePictureUrl.isNotEmpty
                 ? NetworkImage(_profilePictureUrl)
-                : AssetImage('assets/images/default_profile.png'),
+                : AssetImage('assets/images/default_profile.png') as ImageProvider,
           ),
         ),
         SizedBox(width: 8),
@@ -153,6 +159,10 @@ class _HomePageState extends State<HomePage> {
           onSelected: (value) {
             if (value == 'profile') {
               _navigateToProfile();
+            } else if (value == 'upgrade') {
+              _navigateToUpgrade();
+               } else if (value == 'mail') {
+              _navigateToMail();
             } else if (value == 'logout') {
               _signOut();
             }
@@ -166,6 +176,20 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             PopupMenuItem<String>(
+              value: 'upgrade',
+              child: ListTile(
+                leading: Icon(Icons.upgrade_sharp),
+                title: Text('Upgrade your account?'),
+              ),
+            ),
+               PopupMenuItem<String>(
+              value: 'mail',
+              child: ListTile(
+                leading: Icon(Icons.mail),
+                title: Text('Mail'),
+              ),
+            ),
+            PopupMenuItem<String>(
               value: 'logout',
               child: ListTile(
                 leading: Icon(Icons.exit_to_app),
@@ -174,6 +198,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+        
       ];
     } else {
       return [
@@ -197,6 +222,15 @@ class _HomePageState extends State<HomePage> {
     sl<NavigationService>().navigateTo('/profile');
   }
 
+  void _navigateToUpgrade() {
+    sl<NavigationService>().navigateTo('/upgrade');
+  }
+
+    void _navigateToMail() {
+    sl<NavigationService>().navigateTo('/mail');
+  }
+
+
   BottomNavigationBarItem _buildBottomNavigationBarItem(
       IconData icon, String label) {
     return BottomNavigationBarItem(
@@ -217,6 +251,9 @@ class _HomePageState extends State<HomePage> {
         break;
       case 3:
         sl<NavigationService>().navigateTo('/club');
+        break;
+      case 4:
+        sl<NavigationService>().navigateTo('/news');
         break;
     }
     setState(() {
@@ -269,6 +306,15 @@ class _HomePageState extends State<HomePage> {
                     return Center(child: CircularProgressIndicator());
                   }
 
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Error loading tournaments',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    );
+                  }
+
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return Center(
                       child: Text(
@@ -283,61 +329,48 @@ class _HomePageState extends State<HomePage> {
                     return TournamentEvent(
                       id: doc.id,
                       name: doc['name'],
-                      date: doc['date'],
+                      date: doc['event_date_time'],
                       location: doc['location'],
                       description: doc['description'],
                     );
                   }).toList();
 
-                  return Scrollbar(
-                    thumbVisibility: true,
+                  return ListView.builder(
                     controller: _scrollController,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      controller: _scrollController,
-                      child: DataTable(
-                        columns: [
-                          DataColumn(
-                            label: Text('Name',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white)),
+                    itemCount: events.length,
+                    itemBuilder: (context, index) {
+                      final event = events[index];
+                      return Card(
+                        color: Colors.grey[800],
+                        child: ListTile(
+                          title: Text(
+                            event.name,
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          DataColumn(
-                            label: Text('Date',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                DateFormat('dd MMMM yyyy')
+                                    .format(event.date.toDate()),
+                                style: TextStyle(color: Colors.grey[400]),
+                              ),
+                              Text(
+                                event.location,
+                                style: TextStyle(color: Colors.grey[400]),
+                              ),
+                              Text(
+                                event.description,
+                                style: TextStyle(color: Colors.grey[300]),
+                              ),
+                            ],
                           ),
-                          DataColumn(
-                            label: Text('Location',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white)),
-                          ),
-                          DataColumn(
-                            label: Text('Description',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white)),
-                          ),
-                        ],
-                        rows: events
-                            .map((event) => DataRow(
-                                  cells: [
-                                    DataCell(Text(event.name,
-                                        style: TextStyle(color: Colors.white))),
-                                    DataCell(Text(_formatTimestamp(event.date),
-                                        style: TextStyle(color: Colors.white))),
-                                    DataCell(Text(event.location,
-                                        style: TextStyle(color: Colors.white))),
-                                    DataCell(Text(event.description,
-                                        style: TextStyle(color: Colors.white))),
-                                  ],
-                                ))
-                            .toList(),
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -347,14 +380,11 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-  String _formatTimestamp(Timestamp timestamp) {
-    DateTime dateTime = timestamp.toDate();
-    return DateFormat('dd/MM/yyyy').format(dateTime);
-  }
 }
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  setupLocator(); // Initialize dependency injection
   runApp(MyApp());
 }
 
@@ -364,9 +394,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'BeybladeX',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.orange,
+        scaffoldBackgroundColor: Colors.grey[900],
       ),
-      home: HomePage(),
+      navigatorKey: sl<NavigationService>().navigatorKey,
+      routes: {
+        '/': (context) => HomePage(),
+        '/upgrade': (context) => UpgradeAccountPage(), // Define the route for UpgradeAccountPage
+      
+      },
+      initialRoute: '/',
     );
   }
 }

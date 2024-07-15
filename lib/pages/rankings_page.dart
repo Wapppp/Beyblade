@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'user_profile_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-import 'user_profile.dart';
 
 class RankingPage extends StatefulWidget {
   @override
@@ -49,32 +48,30 @@ class _RankingPageState extends State<RankingPage> {
   }
 
   Future<String> _fetchProfilePicture(String bladerName) async {
-  try {
-    final DocumentSnapshot userSnapshot =
-        await _firestore.collection('users').doc(bladerName).get();
+    try {
+      final QuerySnapshot userSnapshot = await _firestore
+          .collection('users')
+          .where('blader_name', isEqualTo: bladerName)
+          .get();
 
-    if (userSnapshot.exists) {
-      return userSnapshot['profile_picture'] ?? '';
-    } else {
-      return ''; // Handle case where user document does not exist
+      if (userSnapshot.docs.isNotEmpty) {
+        return userSnapshot.docs.first['profile_picture'] ?? '';
+      } else {
+        return ''; // Handle case where user document does not exist
+      }
+    } catch (e) {
+      print('Error fetching profile picture for $bladerName: $e');
+      return ''; // Handle error gracefully
     }
-  } catch (e) {
-    print('Error fetching profile picture for $bladerName: $e');
-    return ''; // Handle error gracefully
   }
-}
 
   void _handleVisit(Map<String, dynamic> player) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => UserProfilePage(
-          userProfile: UserProfile(
-            bladerName: player['blader_name'],
-            won: player['total_wins'] ?? 0,
-            lost: player['total_losses'] ?? 0,
-            profilePicture: player['profile_picture'] ?? '',
-          ),
+          bladerName:
+              player['blader_name'], // Pass blader_name to UserProfilePage
         ),
       ),
     );
@@ -126,7 +123,7 @@ class _RankingPageState extends State<RankingPage> {
                         ),
                         SizedBox(width: 8),
                         Text(
-                          'BBC Rankings',
+                          'Leaderboards',
                           style: TextStyle(
                             fontSize: 28,
                             color: Colors.white,
@@ -218,7 +215,8 @@ class _RankingPageState extends State<RankingPage> {
     // Your MMR calculation logic here
     int wins = totalWins ?? 0;
     int losses = totalLosses ?? 0;
-    return wins * 3 + losses * 1; // Adjust this based on your actual MMR formula
+    return wins * 3 +
+        losses * 1; // Adjust this based on your actual MMR formula
   }
 
   String _formatDate(DateTime date) {

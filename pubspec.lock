@@ -301,23 +301,23 @@ packages:
     dependency: "direct main"
     description:
       name: fl_chart
-      sha256: "57a4ecd718d001dd040204bdf9ed74c4cc9ec633137a5b740bc3a3209afb2b32"
+      sha256: d0f0d49112f2f4b192481c16d05b6418bd7820e021e265a3c22db98acf7ed7fb
       url: "https://pub.dev"
     source: hosted
-    version: "0.41.0"
+    version: "0.68.0"
   flutter:
     dependency: "direct main"
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_barcode_sdk:
+  flutter_email_sender:
     dependency: "direct main"
     description:
-      name: flutter_barcode_sdk
-      sha256: fd7c4568c87fafc29c93e78a5d03277264b6712fc8d17d1087f59bc4b0ad627d
+      name: flutter_email_sender
+      sha256: fb515d4e073d238d0daf1d765e5318487b6396d46b96e0ae9745dbc9a133f97a
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.6"
+    version: "6.0.3"
   flutter_html:
     dependency: "direct main"
     description:
@@ -484,10 +484,10 @@ packages:
     dependency: transitive
     description:
       name: image_picker_android
-      sha256: ff39a10ab4f48f4ac70776d0494a97bf073cd2570892cd46bc8a5cac162c25db
+      sha256: "4161e1f843d8480d2e9025ee22411778c3c9eb7e40076dcf2da23d8242b7b51c"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.12+4"
+    version: "0.8.12+3"
   image_picker_for_web:
     dependency: transitive
     description:
@@ -820,10 +820,10 @@ packages:
     dependency: "direct main"
     description:
       name: qr_code_scanner
-      sha256: "24250bf4874679b60abf7cb4b92cd62dbdc08a3081773bed234b4fbc31baa81c"
+      sha256: f23b68d893505a424f0bd2e324ebea71ed88465d572d26bb8d2e78a4749591fd
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.0"
+    version: "1.0.1"
   qr_code_tools:
     dependency: "direct main"
     description:

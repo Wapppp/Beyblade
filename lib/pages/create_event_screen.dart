@@ -50,7 +50,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         'tournament_type': selectedType,
         'open_signup': true,
         'location': _locationController.text,
-        'event_date_time': eventDateTime?.toIso8601String(), // Use null-aware operator
+        'event_date_time':
+            eventDateTime?.toIso8601String(), // Use null-aware operator
       }
     };
 
@@ -78,10 +79,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           'organizerId': user!.uid,
           'organizerName': organizerData['organizer_name'],
           'location': _locationController.text,
-          'event_date_time': eventDateTime != null ? Timestamp.fromDate(eventDateTime!) : null, // Use null check and force unwrap
+          'event_date_time': eventDateTime != null
+              ? Timestamp.fromDate(eventDateTime!)
+              : null, // Use null check and force unwrap
         });
 
-        await _generateAndUploadQrCode(tournamentId); // Generate and upload QR code
+        await _generateAndUploadQrCode(
+            tournamentId); // Generate and upload QR code
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Tournament created successfully')),
@@ -214,7 +218,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: createTournament,
-              child: Text('Create Tournament'), 
+              child: Text('Create Tournament'),
+            ),
             if (qrCodeUrl != null) ...[
               SizedBox(height: 20),
               Text('QR Code URL: $qrCodeUrl'),

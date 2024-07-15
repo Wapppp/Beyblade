@@ -1,13 +1,13 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'auth_service.dart';
 
 class AppColors {
   static const Color primaryColor = Colors.orange;
   static const Color appBarColor = Colors.black;
-  static const Color scaffoldBackgroundColor = Colors.grey;
+  static const Color scaffoldBackgroundColor = Color.fromARGB(255, 33, 33, 33);
   static const Color cardColor = Colors.grey;
 }
 
@@ -60,37 +60,6 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
     }
   }
 
-  Future<void> _signInWithGoogle() async {
-    try {
-      // Sign in with Google
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser != null) {
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-        final AuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken!,
-          idToken: googleAuth.idToken!,
-        );
-
-        final UserCredential userCredential =
-            await _auth.signInWithCredential(credential);
-        final User? user = userCredential.user;
-
-        if (user != null) {
-          // Store organizer data in Firestore
-          await _storeOrganizerDataInFirestore(user);
-
-          // Navigate to organizer page
-          Navigator.pushReplacementNamed(context, '/organizer');
-        }
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
-    }
-  }
-
   Future<void> _storeOrganizerDataInFirestore(User user) async {
     try {
       // Store organizer details in Firestore under 'organizers' collection
@@ -139,190 +108,167 @@ class _OrganizerRegisterPageState extends State<OrganizerRegisterPage> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.orange, Colors.black],
+              colors: [AppColors.primaryColor, AppColors.appBarColor],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
         ),
       ),
-      backgroundColor: const Color.fromARGB(255, 33, 33, 33),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Organizer Name',
-                labelStyle: TextStyle(color: Colors.grey[200]),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.cardColor),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.cardColor),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
+      backgroundColor: AppColors.scaffoldBackgroundColor,
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.black, Colors.grey[850]!],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              style: TextStyle(color: Colors.white),
             ),
-            SizedBox(height: 10.0),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                labelStyle: TextStyle(color: Colors.grey[200]),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.cardColor),
-                  borderRadius: BorderRadius.circular(10.0),
+          ),
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Card(
+                color: Colors.grey[850],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.cardColor),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              style: TextStyle(color: Colors.white),
-            ),
-            SizedBox(height: 10.0),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                labelStyle: TextStyle(color: Colors.grey[200]),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.cardColor),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.cardColor),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-              ),
-              obscureText: true,
-              style: TextStyle(color: Colors.white),
-            ),
-            SizedBox(height: 20.0),
-            _isLoading
-                ? CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _registerWithEmailAndPassword,
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                        AppColors.primaryColor,
-                      ),
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.0),
+                elevation: 10.0,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        'Register as Organizer',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryColor,
                         ),
                       ),
-                      padding: MaterialStateProperty.all<EdgeInsets>(
-                        EdgeInsets.symmetric(horizontal: 0),
-                      ),
-                      elevation: MaterialStateProperty.all<double>(5),
-                    ),
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primaryColor,
-                            const Color.fromARGB(255, 0, 0, 0)
-                          ],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
+                      SizedBox(height: 20.0),
+                      TextField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Organizer Name',
+                          labelStyle: TextStyle(color: Colors.grey[200]),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primaryColor),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(10.0),
+                        style: TextStyle(color: Colors.white),
                       ),
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: double.infinity,
-                          minHeight: 50.0,
+                      SizedBox(height: 20.0),
+                      TextField(
+                        controller: _emailController,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          labelStyle: TextStyle(color: Colors.grey[200]),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primaryColor),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
                         ),
-                        alignment: Alignment.center,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      SizedBox(height: 20.0),
+                      TextField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          labelStyle: TextStyle(color: Colors.grey[200]),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primaryColor),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                        ),
+                        obscureText: true,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      SizedBox(height: 20.0),
+                      _isLoading
+                          ? CircularProgressIndicator()
+                          : ElevatedButton(
+                              onPressed: _registerWithEmailAndPassword,
+                              style: ButtonStyle(
+                                backgroundColor: MaterialStateProperty.all<Color>(AppColors.primaryColor),
+                                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                ),
+                                padding: MaterialStateProperty.all<EdgeInsets>(
+                                  EdgeInsets.symmetric(horizontal: 0),
+                                ),
+                                elevation: MaterialStateProperty.all<double>(5),
+                              ),
+                              child: Ink(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [AppColors.primaryColor, AppColors.appBarColor],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10.0),
+                                ),
+                                child: Container(
+                                  constraints: BoxConstraints(
+                                    maxWidth: double.infinity,
+                                    minHeight: 50.0,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'Register',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                      SizedBox(height: 10.0),
+                      if (_errorMessage != null)
+                        Padding(
+                          padding: EdgeInsets.only(top: 20),
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      TextButton(
+                        onPressed: _navigateToOrganizerLoginPage,
                         child: Text(
-                          'Register',
+                          'Already have an account? Login',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.primaryColor,
                             fontSize: 16,
                           ),
                         ),
                       ),
-                    ),
-                  ),
-            SizedBox(height: 10.0),
-            ElevatedButton(
-              onPressed: _signInWithGoogle,
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all<Color>(
-                  AppColors.primaryColor,
-                ),
-                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                padding: MaterialStateProperty.all<EdgeInsets>(
-                  EdgeInsets.symmetric(horizontal: 0),
-                ),
-                elevation: MaterialStateProperty.all<double>(5),
-              ),
-              child: Ink(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primaryColor,
-                      const Color.fromARGB(255, 0, 0, 0)
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: double.infinity,
-                    minHeight: 50.0,
-                  ),
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset('assets/google.png', height: 24.0),
-                      SizedBox(width: 12.0),
-                      Text(
-                        'Sign in with Google',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                      ),
                     ],
                   ),
                 ),
               ),
             ),
-            SizedBox(height: 10.0),
-            if (_errorMessage != null)
-              Padding(
-                padding: EdgeInsets.only(top: 20),
-                child: Text(
-                  _errorMessage!,
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            TextButton(
-              onPressed: _navigateToOrganizerLoginPage,
-              child: Text(
-                'Already have an account? Login',
-                style: TextStyle(
-                  color: AppColors.primaryColor,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

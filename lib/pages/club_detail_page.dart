@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:beyblade/pages/manage_club_page.dart';
 import 'package:beyblade/pages/profile_detail_page.dart';
+import 'package:beyblade/pages/user_profile_page.dart'; // Import UserProfilePage
 
 class ClubDetailPage extends StatelessWidget {
   final DocumentSnapshot clubSnapshot;
@@ -53,7 +54,7 @@ class ClubDetailPage extends StatelessWidget {
                   color: Colors.grey[850], // Dark grey background for list
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: _buildMembersList(clubData['members'], clubData['leader']),
+                child: _buildMembersList(clubData['members'], clubData['leader'], context),
               ),
             ),
             SizedBox(height: 16),
@@ -120,7 +121,7 @@ class ClubDetailPage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProfileDetailPage(uid: leaderId),
+                  builder: (context) => UserProfilePage(bladerName: leaderData['blader_name']),
                 ),
               );
             },
@@ -162,7 +163,7 @@ class ClubDetailPage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProfileDetailPage(uid: viceCaptainId),
+                  builder: (context) => UserProfilePage(bladerName: viceCaptainData['blader_name']),
                 ),
               );
             },
@@ -185,7 +186,7 @@ class ClubDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMembersList(List<dynamic>? members, String? leaderId) {
+  Widget _buildMembersList(List<dynamic>? members, String? leaderId, BuildContext context) {
     if (members == null || leaderId == null) {
       return Center(child: Text('No members found', style: TextStyle(color: Colors.white)));
     }
@@ -214,7 +215,7 @@ class ClubDetailPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ProfileDetailPage(uid: memberDocs[index].id),
+                    builder: (context) => UserProfilePage(bladerName: memberData['blader_name']),
                   ),
                 );
               },
