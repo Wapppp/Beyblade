@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'tournament_details_page.dart'; // Import TournamentDetailsPage and TournamentEvent from correct file
+import 'tournament_details_page.dart'; // Import your details page
 
 enum TournamentStatus {
   Upcoming,
@@ -19,8 +19,8 @@ class TournamentsPage extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('tournaments')
-            .orderBy('date')
-            .limit(20) // Limiting to 20 tournaments
+            .orderBy('event_date_time')
+            .limit(20)
             .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -37,48 +37,31 @@ class TournamentsPage extends StatelessWidget {
 
           final now = DateTime.now();
           final tournaments = snapshot.data!.docs.map((doc) {
-            Timestamp dateTimestamp = doc['date'];
+            Timestamp dateTimestamp = doc['event_date_time'];
             return TournamentEvent(
               id: doc.id,
               name: doc['name'],
-              date: dateTimestamp,
+              event_date_time: dateTimestamp,
               location: doc['location'],
               description: doc['description'],
             );
           }).toList();
 
-          // Filter and archive ended tournaments
-          List<TournamentEvent> filteredTournaments = [];
-          for (var tournament in tournaments) {
-            final status = _getTournamentStatus(tournament.date, now);
-            if (status == TournamentStatus.Ended) {
-              _archiveTournament(tournament);
-            } else {
-              filteredTournaments.add(tournament);
-            }
-          }
-
-          if (filteredTournaments.isEmpty) {
-            return Center(
-              child: Text(
-                'No upcoming or ongoing tournaments available',
-                style: TextStyle(fontSize: 18),
-              ),
-            );
-          }
+          // Log the number of tournaments fetched
+          print('Fetched tournaments: ${tournaments.length}');
 
           return ListView.builder(
-            itemCount: filteredTournaments.length,
+            itemCount: tournaments.length,
             itemBuilder: (context, index) {
-              final tournament = filteredTournaments[index];
-              final status = _getTournamentStatus(tournament.date, now);
+              final tournament = tournaments[index];
+              final status = _getTournamentStatus(tournament.event_date_time, now);
 
               return ListTile(
                 title: Text(tournament.name),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_formatTimestamp(tournament.date)),
+                    Text(_formatTimestamp(tournament.event_date_time)),
                     _buildStatusWidget(status),
                   ],
                 ),
@@ -145,42 +128,15 @@ class TournamentsPage extends StatelessWidget {
     );
   }
 
-  TournamentStatus _getTournamentStatus(
-      Timestamp tournamentDate, DateTime now) {
+  TournamentStatus _getTournamentStatus(Timestamp tournamentDate, DateTime now) {
     DateTime dateTime = tournamentDate.toDate();
 
     if (now.isBefore(dateTime)) {
-      final difference = dateTime.difference(now);
-      if (difference.inDays > 0) {
-        return TournamentStatus.Upcoming;
-      } else {
-        return TournamentStatus.Started;
-      }
+      return TournamentStatus.Upcoming;
     } else if (now.isAfter(dateTime)) {
       return TournamentStatus.Ended;
     } else {
       return TournamentStatus.Ongoing;
-    }
-  }
-
-  Future<void> _archiveTournament(TournamentEvent tournament) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('archive_tournaments')
-          .doc(tournament.id)
-          .set({
-        'name': tournament.name,
-        'date': tournament.date,
-        'location': tournament.location,
-        'description': tournament.description,
-      });
-      await FirebaseFirestore.instance
-          .collection('tournaments')
-          .doc(tournament.id)
-          .delete();
-      print('Tournament archived and removed from active collection');
-    } catch (e) {
-      print('Error archiving tournament: $e');
     }
   }
 }

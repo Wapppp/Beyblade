@@ -19,7 +19,6 @@ import 'pages/admin/admin_page.dart';
 import 'pages/organizer_page.dart';
 import 'pages/organizer_login_page.dart';
 import 'pages/organizer_register_page.dart';
-import 'pages/create_tournament_screen.dart';
 import 'pages/manage_tournaments_screen.dart';
 // Import your local dependencies
 import 'pages/data/injection_container.dart'; // Adjust the path as per your structure
@@ -79,7 +78,6 @@ class MyApp extends StatelessWidget {
           '/organizer_login': (context) => OrganizerLoginPage(),
           '/register_organizer': (context) => OrganizerRegisterPage(),
           '/manage-tournaments': (context) => ManageTournamentsScreen(),
-          '/create-tournament': (context) => CreateTournamentScreen(),
         },
         navigatorKey:
             sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'create_event_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'app_colors.dart'; // Import your AppColors class
+import 'create_event_screen.dart';
 import 'tournament_details_screen.dart';
 import 'organizer_profile_screen.dart';
-import 'bracket_management_page.dart'; // Import the BracketManagementPage
-import 'create_bracket_screen.dart'; // Import the CreateBracketScreen
-import 'manage_bracket_page.dart'; // Import the BracketManagementPage
-import 'tournaments_screen.dart'; // Import the TournamentsScreen
+import 'bracket_management_page.dart';
+import 'create_bracket_screen.dart';
+import 'manage_bracket_page.dart';
+import 'tournaments_screen.dart';
 
 class OrganizerPage extends StatefulWidget {
   @override
@@ -15,13 +16,24 @@ class OrganizerPage extends StatefulWidget {
 }
 
 class _OrganizerPageState extends State<OrganizerPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late User? user;
+  User? user;
 
   @override
   void initState() {
     super.initState();
-    user = FirebaseAuth.instance.currentUser;
+    user = _auth.currentUser;
+    if (user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/login');
+      });
+    }
+  }
+
+  Future<void> _signOut() async {
+    await _auth.signOut();
+    Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override
@@ -33,10 +45,7 @@ class _OrganizerPageState extends State<OrganizerPage> {
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacementNamed(context, '/');
-            },
+            onPressed: _signOut,
           ),
           IconButton(
             icon: Icon(Icons.add),
@@ -48,11 +57,18 @@ class _OrganizerPageState extends State<OrganizerPage> {
           ),
           IconButton(
             icon: Icon(Icons.person),
-            onPressed: () {
-              _navigateToOrganizerProfile();
-            },
+            onPressed: _navigateToOrganizerProfile,
           ),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primaryColor, AppColors.appBarColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -66,10 +82,14 @@ class _OrganizerPageState extends State<OrganizerPage> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _navigateToTournamentsScreen,
+              style: ButtonStyle(
+                backgroundColor:
+                    MaterialStateProperty.all<Color>(AppColors.primaryColor),
+              ),
               child: Text('View All Tournaments'),
             ),
             SizedBox(height: 20),
-            _buildOrganizerTournaments(user!.uid),
+            if (user != null) _buildOrganizerTournaments(user!.uid),
           ],
         ),
       ),
@@ -117,78 +137,30 @@ class _OrganizerPageState extends State<OrganizerPage> {
   }
 
   Widget _buildTournamentTile(DocumentSnapshot doc) {
-    return FutureBuilder<DocumentSnapshot>(
-      future: _firestore.collection('organizers').doc(doc['organizerId']).get(),
-      builder: (context, organizerSnapshot) {
-        if (organizerSnapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-        if (organizerSnapshot.hasError) {
-          return Center(child: Text('Error: ${organizerSnapshot.error}'));
-        }
-        if (!organizerSnapshot.hasData || !organizerSnapshot.data!.exists) {
-          return Center(child: Text('Organizer not found'));
-        }
-
-        final organizerName = organizerSnapshot.data!['organizer_name'];
-
-        return ListTile(
-          title: Text(doc['name']),
-          subtitle: Text('Organizer: $organizerName'),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: Icon(Icons.format_list_bulleted), // Updated icon
-                onPressed: () {
-                  _navigateToBracketManagementPage(doc.id);
-                },
-              ),
-              IconButton(
-                icon: Icon(Icons.manage_search),
-                onPressed: () {
-                  _navigateToManageBracketPage(doc.id);
-                },
-              ),
-            ],
+    return ListTile(
+      title: Text(doc['name']),
+      subtitle: Text('Organizer: ${doc['organizerName']}'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.format_list_bulleted),
+            onPressed: () {
+              _navigateToBracketManagementPage(doc.id);
+            },
           ),
-          onTap: () {
-            _navigateToDetailsScreen(doc);
-          },
-        );
+          IconButton(
+            icon: Icon(Icons.manage_search),
+            onPressed: () {
+              _navigateToManageBracketPage(doc.id);
+            },
+          ),
+        ],
+      ),
+      onTap: () {
+        _navigateToDetailsScreen(doc);
       },
     );
-  }
-
-  void _navigateToCreateEventScreen(String organizerId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CreateEventScreen(
-          onEventCreated: (event) {
-            _addEvent(event, organizerId);
-          },
-          organizerId: organizerId,
-        ),
-      ),
-    );
-  }
-
-  void _addEvent(TournamentEvent event, String organizerId) async {
-    try {
-      await _firestore.collection('tournaments').add({
-        'name': event.name,
-        'date': event.dateAndTime,
-        'location': event.location,
-        'description': event.description,
-        'organizerId': organizerId,
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Tournament Event Created')),
-      );
-    } catch (error) {
-      print('Error adding event: $error');
-    }
   }
 
   void _navigateToDetailsScreen(DocumentSnapshot tournamentDoc) {
@@ -201,13 +173,24 @@ class _OrganizerPageState extends State<OrganizerPage> {
     );
   }
 
-  void _navigateToOrganizerProfile() {
+  void _navigateToCreateEventScreen(String organizerId) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => OrganizerProfileScreen(userId: user!.uid),
+        builder: (context) => CreateEventScreen(),
       ),
     );
+  }
+
+  void _navigateToOrganizerProfile() {
+    if (user != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrganizerProfileScreen(userId: user!.uid),
+        ),
+      );
+    }
   }
 
   void _navigateToBracketManagementPage(String tournamentId) {

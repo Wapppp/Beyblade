@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:typed_data';
+import 'tournament_detail_screen.dart';
 
 class ManageTournamentsScreen extends StatefulWidget {
   @override
@@ -55,51 +55,16 @@ class _ManageTournamentsScreenState extends State<ManageTournamentsScreen> {
           return ListTile(
             title: Text(tournament['name'] ?? 'No name'),
             subtitle: Text(tournament['description'] ?? 'No description'),
-            trailing: IconButton(
-              icon: Icon(Icons.info),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(tournament['name']),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            'Type: ${tournament['tournament_type'] ?? 'Unknown'}'),
-                        Text('URL: ${tournament['url'] ?? 'No URL'}'),
-                        Text(
-                            'Created At: ${tournament['created_at'] ?? 'Unknown'}'),
-                        Text(
-                            'Participants Count: ${tournament['participants_count'] ?? 'Unknown'}'),
-                        SizedBox(height: 10),
-                        if (tournament['live_image_url'] != null)
-                          FutureBuilder(
-                            future: fetchImage(tournament['live_image_url']),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return CircularProgressIndicator();
-                              } else if (snapshot.hasError) {
-                                return Text('Error loading image');
-                              } else {
-                                return Image.memory(snapshot.data as Uint8List);
-                              }
-                            },
-                          ),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text('Close'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+            trailing: Icon(Icons.info),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      TournamentDetailScreen(tournament: tournament),
+                ),
+              );
+            },
           );
         },
       ),
@@ -112,26 +77,5 @@ class _ManageTournamentsScreenState extends State<ManageTournamentsScreen> {
         tooltip: 'Create Tournament',
       ),
     );
-  }
-
-  Future<Uint8List> fetchImage(String imageUrl) async {
-    try {
-      final response = await http
-          .get(Uri.parse('http://localhost:3000/fetch-image?url=$imageUrl'));
-
-      if (response.statusCode == 200) {
-        // Check if response body is empty
-        if (response.bodyBytes.isEmpty) {
-          throw Exception('Empty response body');
-        }
-
-        return response.bodyBytes as Uint8List; // Explicit type assertion
-      } else {
-        throw Exception('Failed to load image: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching image: $e');
-      throw Exception('Failed to load image');
-    }
   }
 }

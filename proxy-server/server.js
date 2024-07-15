@@ -2,6 +2,8 @@ const express = require('express');
 const https = require('https');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const axios = require('axios');
+const xml2js = require('xml2js');
 
 const app = express();
 const port = 3000;
@@ -9,6 +11,121 @@ const port = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+app.get('/tournament/:tournamentId/matches', async (req, res) => {
+  const { tournamentId } = req.params;
+
+  try {
+    const response = await axios.get(
+      `https://api.challonge.com/v1/tournaments/${tournamentId}/matches.json`,
+      {
+        params: {
+          api_key: 'aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa',
+        },
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error(`Error fetching matches: ${error}`);
+    res.status(500).json({ error: 'Error fetching matches' });
+  }
+});
+
+// Get tournament details
+app.get('/tournament/:id', async (req, res) => {
+  const tournamentId = req.params.id;
+
+  try {
+    const response = await axios.get(`https://api.challonge.com/v1/tournaments/${tournamentId}.json`, {
+      params: {
+        api_key: 'aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa'
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching tournament:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Get participants of a tournament
+app.get('/tournament/:id/participants', async (req, res) => {
+  const tournamentId = req.params.id;
+
+  try {
+    const response = await axios.get(`https://api.challonge.com/v1/tournaments/${tournamentId}/participants.json`, {
+      params: {
+        api_key: 'aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa'
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching participants:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// Get matches of a tournament
+app.get('/tournament/:id/matches', async (req, res) => {
+  const tournamentId = req.params.id;
+
+  try {
+    const response = await axios.get(`https://api.challonge.com/v1/tournaments/${tournamentId}/matches.json`, {
+      params: {
+        api_key: 'aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa'
+      }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching matches:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/fetch-svg', async (req, res) => {
+  const svgUrl = req.query.url;
+
+  if (!svgUrl) {
+    return res.status(400).send('URL is required');
+  }
+
+  try {
+    const response = await axios.get(svgUrl, { responseType: 'text' });
+    if (response.headers['content-type'] === 'image/svg+xml') {
+      res.send(response.data);
+    } else {
+      res.status(400).send('Invalid SVG content');
+    }
+  } catch (error) {
+    res.status(500).send('Error fetching SVG');
+  }
+});
+
+// Proxy endpoint for fetching images from Challonge
+app.get('/fetch-image', async (req, res) => {
+  const imageUrl = req.query.url; // URL of the image to fetch from Challonge
+
+  const options = {
+    hostname: 'challonge.com',
+    port: 443,
+    path: imageUrl, // Use the full image URL here
+    method: 'GET',
+    headers: {
+      'Content-Type': 'image/svg+xml', // Adjust content type as per your image type
+    }
+  };
+  const apiReq = https.request(options, (apiRes) => {
+    res.set('Access-Control-Allow-Origin', '*'); // Allow all origins
+    apiRes.pipe(res);
+  });
+
+  apiReq.on('error', (e) => {
+    console.error(`Problem with request: ${e.message}`);
+    res.status(500).send('Internal Server Error');
+  });
+
+  apiReq.end();
+});
 // POST start tournament bracket on Challonge
 app.post('/tournaments/:tournamentId/start', async (req, res) => {
   const tournamentId = req.params.tournamentId;
