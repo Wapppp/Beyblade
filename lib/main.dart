@@ -40,6 +40,7 @@ import 'pages/create_agency_page.dart';
 import 'pages/agency_profile.dart';
 import 'pages/invite_players.dart';
 import 'pages/invitations_dialog.dart';
+import 'pages/invites_club_page.dart';
 import 'pages/mail_page.dart';
 
 void main() async {
@@ -95,16 +96,15 @@ class MyApp extends StatelessWidget {
           '/organizer_login': (context) => OrganizerLoginPage(),
           '/register_organizer': (context) => OrganizerRegisterPage(),
           '/news': (context) => NewsPage(),
-           '/agencyhome': (context) => AgencyHomePage(),
-            '/sponsorshome': (context) => SponsorsHomePage(),
-      '/judgehome': (context) => JudgeHomePage(),
-      '/upgrade': (context) => UpgradeAccountPage(),
-      '/createagency': (context) => CreateAgencyDialog (),
-      '/agencyprofile': (context) => AgencyProfilePage (),
-      '/inviteplayers': (context) => InvitePlayersPage (),
-      '/mail': (context) => MailPage(),
-
-
+          '/agencyhome': (context) => AgencyHomePage(),
+          '/sponsorshome': (context) => SponsorsHomePage(),
+          '/judgehome': (context) => JudgeHomePage(),
+          '/upgrade': (context) => UpgradeAccountPage(),
+          '/createagency': (context) => CreateAgencyDialog(),
+          '/agencyprofile': (context) => AgencyProfilePage(),
+          '/inviteplayers': (context) => InvitePlayersPage(),
+          '/inviteclubs': (context) => InviteClubLeadersPage(),
+          '/mail': (context) => MailPage(),
         },
         navigatorKey:
             sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt

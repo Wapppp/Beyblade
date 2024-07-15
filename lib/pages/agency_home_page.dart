@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -24,82 +23,101 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
     super.initState();
     _loadCurrentUser();
   }
-void _loadCurrentUser() async {
-  final user = _auth.currentUser;
-  if (user != null) {
-    try {
-      final agencySnapshot = await _firestore
-          .collection('agencies')
-          .where('created_by', isEqualTo: user.uid)
-          .get();
 
-      if (agencySnapshot.docs.isNotEmpty) {
-        setState(() {
-          _agencyName = agencySnapshot.docs.first.get('agency_name') ?? 'Agency';
-          // Check if 'role' field exists before setting
-          if (agencySnapshot.docs.first.data().containsKey('role')) {
-            _userRole = agencySnapshot.docs.first.get('role');
-          } else {
-            _userRole = ''; // Handle default or fallback role here
-          }
-        });
-      } else {
-        // If no agency found for the user, set default values
-        setState(() {
-          _agencyName = 'Agency'; // Default name if not found
-          _userRole = '';
-        });
+  void _loadCurrentUser() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        final agencySnapshot = await _firestore
+            .collection('agencies')
+            .where('created_by', isEqualTo: user.uid)
+            .get();
+
+        if (agencySnapshot.docs.isNotEmpty) {
+          setState(() {
+            _agencyName =
+                agencySnapshot.docs.first.get('agency_name') ?? 'Agency';
+            if (agencySnapshot.docs.first.data().containsKey('role')) {
+              _userRole = agencySnapshot.docs.first.get('role');
+            } else {
+              _userRole = '';
+            }
+          });
+        } else {
+          setState(() {
+            _agencyName = 'Agency';
+            _userRole = '';
+          });
+        }
+      } catch (e) {
+        print('Error fetching agency information: $e');
       }
-    } catch (e) {
-      print('Error fetching agency information: $e');
-      // Handle error if necessary
     }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
       body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavigationBar(), // Integrated bottom navigation bar
-      backgroundColor: Colors.grey[900], // Setting background color
+      bottomNavigationBar: _buildBottomNavigationBar(),
+      backgroundColor: Colors.grey[900],
     );
   }
-AppBar _buildAppBar() {
-  return AppBar(
-    automaticallyImplyLeading: false, // This will remove the back button
-    title: Text(
-      _agencyName, // Displaying agency_name as the title
-      style: TextStyle(color: Colors.grey[300], fontSize: 24),
-    ),
-    actions: [
-      _buildUserDropdown(), // Dropdown for user actions
-    ],
-    flexibleSpace: Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.orange, Colors.black],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      title: Text(
+        _agencyName,
+        style: TextStyle(color: Colors.grey[300], fontSize: 24),
+      ),
+      actions: [
+        _buildUserDropdown(),
+      ],
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.orange, Colors.black],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
- 
   Widget _buildBody() {
     return Center(
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/inviteplayers'); // Navigate to InvitePlayersPage
-        },
-        child: Text('Invite Players', style: TextStyle(fontSize: 18)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange,
-          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/inviteplayers');
+            },
+            child: Text('Invite Players', style: TextStyle(fontSize: 18)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/inviteclubs');
+            },
+            child: Text('Invite Club', style: TextStyle(fontSize: 18)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -109,27 +127,27 @@ AppBar _buildAppBar() {
       return DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: 'Hello, $_bladerName',
-          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]), // Adjust icon color if needed
+          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
           onChanged: (String? newValue) {
             if (newValue == 'Logout') {
-              _signOut(); // Call _signOut method here
+              _signOut();
             } else if (newValue == 'My Profile') {
               Navigator.pushNamed(context, '/profile');
             } else if (newValue == 'Agency Profile') {
-              Navigator.pushNamed(context, '/agencyprofile'); // Navigate to UpgradeAccountPage
+              Navigator.pushNamed(context, '/agencyprofile');
             }
           },
           items: <String>[
             'Hello, $_bladerName',
             'My Profile',
-            'Agency Profile', // Add this option
+            'Agency Profile',
             'Logout'
           ].map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Text(
                 value,
-                style: TextStyle(color: Colors.grey[500]), // Set text color to white
+                style: TextStyle(color: Colors.grey[500]),
               ),
             );
           }).toList(),
@@ -144,7 +162,7 @@ AppBar _buildAppBar() {
     return BottomNavigationBar(
       currentIndex: _selectedIndex,
       onTap: _onBottomNavigationBarTapped,
-      backgroundColor: Colors.grey[900], // Keeping the background color
+      backgroundColor: Colors.grey[900],
       selectedItemColor: Colors.orange,
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
@@ -177,10 +195,12 @@ AppBar _buildAppBar() {
     setState(() {
       _selectedIndex = index;
     });
-    // Handle navigation based on index
     switch (index) {
       case 0:
-        sl<NavigationService>().navigatorKey.currentState!.pushNamed('/agencyhome');
+        sl<NavigationService>()
+            .navigatorKey
+            .currentState!
+            .pushNamed('/agencyhome');
         break;
       case 1:
         Navigator.pushNamed(context, '/profile');

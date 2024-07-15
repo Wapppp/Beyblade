@@ -31,6 +31,8 @@ class CreateClubPage extends StatelessWidget {
                   String clubName = _clubNameController.text.trim();
                   if (clubName.isNotEmpty) {
                     String leaderName = await _fetchBladerName(user.uid);
+                    String leaderEmail =
+                        user.email ?? ''; // Fetch leader's email
 
                     DocumentReference clubRef = await FirebaseFirestore.instance
                         .collection('clubs')
@@ -38,6 +40,7 @@ class CreateClubPage extends StatelessWidget {
                       'name': clubName,
                       'leader': user.uid,
                       'leader_name': leaderName,
+                      'leader_email': leaderEmail, // Add leader's email
                       'vice_captain': null,
                       'vice_captain_name': null,
                       'members': [],

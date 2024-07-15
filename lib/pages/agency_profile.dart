@@ -34,19 +34,22 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
     final user = _auth.currentUser;
     if (user != null) {
       try {
-        final userSnapshot = await _firestore.collection('users').doc(user.uid).get();
+        final userSnapshot =
+            await _firestore.collection('users').doc(user.uid).get();
         if (userSnapshot.exists) {
           final userData = userSnapshot.data() as Map<String, dynamic>;
           final agencyId = userData['agency_id'];
 
-          final agencySnapshot = await _firestore.collection('agencies').doc(agencyId).get();
+          final agencySnapshot =
+              await _firestore.collection('agencies').doc(agencyId).get();
           if (agencySnapshot.exists) {
             final agencyData = agencySnapshot.data() as Map<String, dynamic>;
             setState(() {
               _agencyNameController.text = agencyData['agency_name'] ?? '';
               _contactController.text = agencyData['contact'] ?? '';
-              _emailController.text = agencyData['email'] ?? '';
-              _imageUrl = agencyData['profile_picture'] ?? ''; // Default to empty string if null
+              _emailController.text = agencyData['agency_email'] ?? '';
+              _imageUrl = agencyData['profile_picture'] ??
+                  ''; // Default to empty string if null
             });
           }
         }
@@ -74,7 +77,9 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
     });
 
     try {
-      final ref = FirebaseStorage.instance.ref().child('agency_profile_pictures/${_auth.currentUser!.uid}');
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('agency_profile_pictures/${_auth.currentUser!.uid}');
       await ref.putFile(_image!);
       final url = await ref.getDownloadURL();
 
@@ -84,7 +89,10 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
       });
 
       // Update Firestore with new profile picture URL
-      final userSnapshot = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+      final userSnapshot = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .get();
       if (userSnapshot.exists) {
         final userData = userSnapshot.data() as Map<String, dynamic>;
         final agencyId = userData['agency_id'];
@@ -93,19 +101,22 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
           'profile_picture': _imageUrl,
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile picture updated')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Profile picture updated')));
       }
     } catch (e) {
       print('Error uploading image: $e');
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update profile picture')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update profile picture')));
     }
   }
 
   Future<void> _saveChanges() async {
-    final userSnapshot = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+    final userSnapshot =
+        await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
     if (userSnapshot.exists) {
       final userData = userSnapshot.data() as Map<String, dynamic>;
       final agencyId = userData['agency_id'];
@@ -116,7 +127,8 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
         'agency_email': _emailController.text,
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile updated')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Profile updated')));
     }
   }
 
@@ -149,13 +161,16 @@ class _AgencyProfilePageState extends State<AgencyProfilePage> {
                     ? FileImage(_image!)
                     : (_imageUrl.isNotEmpty
                         ? NetworkImage(_imageUrl)
-                        : AssetImage('assets/default_profile.png')), // Use default image asset if no image is set
+                        : AssetImage(
+                            'assets/default_profile.png')), // Use default image asset if no image is set
               ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _uploadImage,
-              child: _isLoading ? CircularProgressIndicator() : Text('Change Profile Picture'),
+              child: _isLoading
+                  ? CircularProgressIndicator()
+                  : Text('Change Profile Picture'),
             ),
             SizedBox(height: 20),
             TextFormField(

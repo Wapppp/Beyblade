@@ -1,36 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class InvitePlayersPage extends StatefulWidget {
+class InviteClubPage extends StatefulWidget {
   @override
-  _InvitePlayersPageState createState() => _InvitePlayersPageState();
+  _InviteClubPageState createState() => _InviteClubPageState();
 }
 
-class _InvitePlayersPageState extends State<InvitePlayersPage> {
-  List<Map<String, dynamic>> _players = [];
+class _InviteClubPageState extends State<InviteClubPage> {
+  List<Map<String, dynamic>> _clubLeaders = [];
   List<Map<String, dynamic>> _agencies = [];
-  String _invitationTitle = 'Invitation to Join Our Agency';
+  String _invitationTitle = 'Invitation to Join Our Club';
   String _invitationDescription =
-      'We are excited to invite you to join our agency. Here are the details:';
-  String _invitationMessage = 'You have been invited to join our agency!';
+      'We are excited to invite you to join our club. Here are the details:';
+  String _invitationMessage = 'You have been invited to join our club!';
 
   @override
   void initState() {
     super.initState();
-    _fetchPlayers();
+    _fetchClubLeaders();
     _fetchAgencies();
   }
 
-  Future<void> _fetchPlayers() async {
-    QuerySnapshot snapshot =
-        await FirebaseFirestore.instance.collection('users').get();
+  Future<void> _fetchClubLeaders() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('clubs')
+        .where('leader', isNotEqualTo: null)
+        .get();
     setState(() {
-      _players = snapshot.docs.map((doc) {
+      _clubLeaders = snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         return {
-          'blader_name': data['blader_name'] ?? 'No Name',
-          'email': data['email'] ?? '',
-          'userId': doc.id,
+          'club_name': data['name'] ?? 'No Club Name',
+          'leader_name': data['leader_name'] ?? '',
+          'clubId': doc.id,
         };
       }).toList();
     });
@@ -52,24 +54,58 @@ class _InvitePlayersPageState extends State<InvitePlayersPage> {
     });
   }
 
-  void _invitePlayer(
-      String email, String userId, String agencyId, String agencyEmail) async {
-    if (email.isNotEmpty) {
+  void _inviteLeader(String leaderName, String clubId, String agencyId,
+      String agencyEmail) async {
+    try {
+      // Get the agency details including the agency email
       DocumentSnapshot agencySnapshot = await FirebaseFirestore.instance
           .collection('agencies')
           .doc(agencyId)
           .get();
 
       if (agencySnapshot.exists) {
+        // Query Firestore to get the user document based on leader_name
+        QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('blader_name', isEqualTo: leaderName)
+            .get();
+
+        if (userSnapshot.docs.isEmpty) {
+          print('User with leader_name $leaderName not found in Firestore.');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('User with leader_name $leaderName not found.')),
+          );
+          return;
+        }
+
+        // Assuming there's only one document per leader_name, so accessing the first one
+        DocumentSnapshot userDoc = userSnapshot.docs.first;
+        String leaderEmail = userDoc['email'];
+
+        // Validate email format using a regex pattern
+        bool isValidEmail =
+            RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(leaderEmail);
+
+        if (!isValidEmail) {
+          print('Invalid leader email address');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Invalid leader email address')),
+          );
+          return;
+        }
+
+        // Check if there's already an existing invitation
         QuerySnapshot existingInvitations = await FirebaseFirestore.instance
             .collection('invitations')
-            .where('recipientId', isEqualTo: userId)
-            .where('agencyEmail', isEqualTo: agencyEmail)
+            .where('recipientId', isEqualTo: userDoc.id)
+            .where('agencyId', isEqualTo: agencyId)
             .get();
 
         if (existingInvitations.docs.isEmpty) {
+          // Create a new invitation document
           await FirebaseFirestore.instance.collection('invitations').add({
-            'recipientId': userId,
+            'recipientId': userDoc.id,
             'agencyId': agencyId,
             'agencyEmail': agencySnapshot['agency_email'],
             'agencyName': agencySnapshot['agency_name'],
@@ -79,14 +115,13 @@ class _InvitePlayersPageState extends State<InvitePlayersPage> {
             'createdAt': FieldValue.serverTimestamp(),
           });
 
-          // Send the email (this part needs a backend service to handle the email sending)
-          // For example, using Firebase Functions or any other email service.
+          print('Invitation stored successfully.');
 
-          print('Invited player: $email');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text(
-                    'Invitation sent to $email from ${agencySnapshot['agency_name']}')),
+              content: Text(
+                  'Invitation sent to $leaderEmail from ${agencySnapshot['agency_name']} and stored.'),
+            ),
           );
         } else {
           print('User already invited by this agency');
@@ -100,10 +135,10 @@ class _InvitePlayersPageState extends State<InvitePlayersPage> {
           SnackBar(content: Text('Selected agency not found')),
         );
       }
-    } else {
-      print('Invalid email address');
+    } catch (e, stackTrace) {
+      print('Error inviting leader: $e\n$stackTrace'); // Print detailed error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid email address')),
+        SnackBar(content: Text('Error inviting leader')), // Show error message
       );
     }
   }
@@ -168,7 +203,7 @@ class _InvitePlayersPageState extends State<InvitePlayersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Invite Players'),
+        title: Text('Invite Club Leaders'),
         actions: [
           IconButton(
             icon: Icon(Icons.edit),
@@ -177,17 +212,17 @@ class _InvitePlayersPageState extends State<InvitePlayersPage> {
         ],
       ),
       body: ListView.builder(
-        itemCount: _players.length,
+        itemCount: _clubLeaders.length,
         itemBuilder: (context, index) {
-          final player = _players[index];
+          final club = _clubLeaders[index];
           return ListTile(
-            title: Text(player['blader_name']),
-            subtitle: Text(player['email']),
+            title: Text(club['club_name']),
+            subtitle: Text(club['leader_name']),
             trailing: PopupMenuButton(
-              itemBuilder: (context) => _buildPopupMenuItems(player['userId']),
+              itemBuilder: (context) => _buildPopupMenuItems(club['clubId']),
               onSelected: (String agencyId) {
-                _invitePlayer(
-                    player['email'], player['userId'], agencyId, 'agencyEmail');
+                _inviteLeader(club['leader_name'], club['clubId'], agencyId,
+                    _findAgencyEmailById(agencyId));
               },
               icon: Icon(Icons.mail),
             ),
@@ -197,12 +232,19 @@ class _InvitePlayersPageState extends State<InvitePlayersPage> {
     );
   }
 
-  List<PopupMenuEntry<String>> _buildPopupMenuItems(String userId) {
+  List<PopupMenuEntry<String>> _buildPopupMenuItems(String clubId) {
     return _agencies.map((agency) {
       return PopupMenuItem<String>(
         value: agency['agencyId'],
         child: Text(agency['agency_name']),
       );
     }).toList();
+  }
+
+  String _findAgencyEmailById(String agencyId) {
+    var agency = _agencies.firstWhere(
+        (element) => element['agencyId'] == agencyId,
+        orElse: () => null);
+    return agency != null ? agency['agency_email'] : '';
   }
 }
