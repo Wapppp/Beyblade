@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'manage_participants_page.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'bracket_screen.dart'; // Import the BracketScreen
+import 'bracket_screen.dart'; // Import the new screen
 
 class TournamentDetailsScreen extends StatelessWidget {
   final DocumentSnapshot tournamentDoc;
@@ -55,7 +56,8 @@ class TournamentDetailsScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => BracketScreen(tournamentId: tournamentDoc.id),
+                        builder: (context) =>
+                            BracketScreen(tournamentId: tournamentDoc.id),
                       ),
                     );
                   },
@@ -96,7 +98,9 @@ class TournamentDetailsScreen extends StatelessWidget {
                     stream: FirebaseFirestore.instance
                         .collection('participants')
                         .where('tournament_id', isEqualTo: tournamentDoc.id)
-                        .where('status', isEqualTo: 'confirmed') // Filter for confirmed participants
+                        .where('status',
+                            isEqualTo:
+                                'confirmed') // Filter for confirmed participants
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -106,7 +110,8 @@ class TournamentDetailsScreen extends StatelessWidget {
                         return Center(child: Text('Error: ${snapshot.error}'));
                       }
                       if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return Center(child: Text('No confirmed participants yet.'));
+                        return Center(
+                            child: Text('No confirmed participants yet.'));
                       }
 
                       final participants = snapshot.data!.docs;
@@ -130,10 +135,20 @@ class TournamentDetailsScreen extends StatelessWidget {
                   onPressed: () {
                     _createBracket(context);
                   },
-                  child: Text('Add Participants to Bracket'),
+                  child: Text('Create Bracket'),
                 ),
                 SizedBox(height: 20),
                 _buildQrCodeContainer(),
+                Text(
+                  'This bracket is a preview and subject to change until the tournament is started.',
+                  style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Bracket Preview: ${tournamentDoc['full_challonge_url'] ?? 'Not available'}',
+                  style: TextStyle(fontSize: 16, color: Colors.blue),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           );
@@ -195,15 +210,42 @@ class TournamentDetailsScreen extends StatelessWidget {
     // Fetch confirmed participants
     List<String> confirmedParticipants = await _fetchConfirmedParticipants();
 
-    // Get the existing tournament ID from your data source
-    int tournamentId = tournamentDoc['challongeId'];
+    // Assuming you already have the tournament ID
+    String apiUrl =
+        'http://localhost:3000/add-player'; // Proxy server URL for adding players
 
-    // Add participants to the existing tournament
-    await _addParticipantsToTournament(tournamentId, confirmedParticipants);
+    try {
+      for (String participant in confirmedParticipants) {
+        final response = await http.post(
+          Uri.parse(apiUrl),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'tournament_id':
+                tournamentDoc.id, // Use the tournament ID from Firestore
+            'participant': {
+              'name': participant,
+            },
+          }),
+        );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Participants added to bracket successfully')),
-    );
+        if (response.statusCode == 200) {
+          print('Participant added: $participant');
+        } else {
+          print('Failed to add participant: ${response.statusCode}');
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Participants added successfully')),
+      );
+    } catch (e) {
+      print('Error adding participants: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding participants')),
+      );
+    }
   }
 
   Future<List<String>> _fetchConfirmedParticipants() async {
@@ -216,7 +258,8 @@ class TournamentDetailsScreen extends StatelessWidget {
           .get();
 
       participants = snapshot.docs
-          .map((doc) => doc['blader_name'] as String) // Explicitly cast to String
+          .map((doc) =>
+              doc['blader_name'] as String) // Explicitly cast to String
           .toList();
     } catch (error) {
       print('Error fetching participants: $error');
@@ -224,9 +267,11 @@ class TournamentDetailsScreen extends StatelessWidget {
     return participants;
   }
 
-  Future<void> _addParticipantsToTournament(int tournamentId, List<String> participants) async {
+  Future<void> _addParticipantsToTournament(
+      int tournamentId, List<String> participants) async {
     for (String participant in participants) {
-      String apiUrl = 'http://localhost:3000/add-player'; // Proxy server URL for adding players
+      String apiUrl =
+          'http://localhost:3000/add-player'; // Proxy server URL for adding players
 
       try {
         final response = await http.post(Uri.parse(apiUrl),

@@ -11,6 +11,38 @@ const port = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Check if a tournament exists
+app.post('/check-tournament', async (req, res) => {
+  const { name } = req.body;
+
+  try {
+    // Fetch all tournaments to check if the tournament exists
+    const response = await axios.get('https://api.challonge.com/v1/tournaments.json', {
+      params: {
+        api_key: 'aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa',
+      },
+    });
+
+    const tournaments = response.data.tournaments;
+    const existingTournament = tournaments.find(t => t.name === name);
+
+    if (existingTournament) {
+      return res.json({
+        exists: true,
+        tournament: {
+          id: existingTournament.id,
+        },
+      });
+    } else {
+      return res.json({ exists: false });
+    }
+  } catch (error) {
+    console.error('Error checking tournament:', error);
+    res.status(500).json({ error: 'Error checking tournament' });
+  }
+});
+
+
 app.get('/tournament/:tournamentId/matches', async (req, res) => {
   const { tournamentId } = req.params;
 
