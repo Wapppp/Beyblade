@@ -47,6 +47,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
               Map<String, dynamic> data = document.data() as Map<String, dynamic>;
               Timestamp createdAt = data['createdAt'] as Timestamp;
               String message = data['message'] as String;
+              String userId = data['userId'] ?? ''; // Handle if userId is null
+              String agencyId = data['agencyId'] ?? ''; // Handle if agencyId is null
 
               return Card(
                 elevation: 2.0,
@@ -56,9 +58,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     message,
                     style: TextStyle(fontSize: 16.0),
                   ),
-                  subtitle: Text(
-                    'Received: ${createdAt.toDate().toString()}',
-                    style: TextStyle(fontSize: 12.0),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Received: ${createdAt.toDate().toString()}',
+                        style: TextStyle(fontSize: 12.0),
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Sent by: $userId', // Display userId who sent the invitation
+                        style: TextStyle(fontSize: 12.0),
+                      ),
+                      Text(
+                        'Agency ID: $agencyId', // Display agencyId related to the invitation
+                        style: TextStyle(fontSize: 12.0),
+                      ),
+                    ],
                   ),
                 ),
               );

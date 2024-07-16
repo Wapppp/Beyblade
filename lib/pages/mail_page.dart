@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -156,23 +157,40 @@ class _MailPageState extends State<MailPage> {
       // Handle error gracefully, e.g., show snackbar or alert
     }
   }
+void _notifyAgency(Map<String, dynamic> invitation, String status) async {
+  try {
+    // Fetch the agency document
+    DocumentSnapshot agencyDoc = await _firestore.collection('agencies').doc(invitation['agencyId']).get();
 
-  void _notifyAgency(Map<String, dynamic> invitation, String status) async {
-    try {
-      // Example notification message to the agency
-      String message = 'User ${invitation['bladerName']} has $status your invitation';
+    // Check if agencyDoc exists and contains data
+    if (agencyDoc.exists) {
+      // Get data map from agencyDoc
+      Map<String, dynamic> data = agencyDoc.data() as Map<String, dynamic>;
 
-      // Replace with your logic to notify the agency, e.g., send a Firestore message
-      await _firestore.collection('notifications').add({
-        'recipientId': invitation['agencyId'],
-        'message': message,
-        'createdAt': Timestamp.now(),
-      });
-    } catch (e) {
-      print('Error notifying agency: $e');
-      // Handle error gracefully, e.g., show snackbar or alert
+      // Fetch userId safely from the data map
+      String? userId = data['created_by'];
+
+      if (userId != null) {
+        // Example notification message to the agency
+        String message = 'User ${invitation['bladerName']} has $status your invitation';
+
+        // Replace with your logic to notify the agency, e.g., send a Firestore message
+        await _firestore.collection('notifications').add({
+          'recipientId': userId,
+          'message': message,
+          'createdAt': Timestamp.now(),
+        });
+      } else {
+        print('Error: UserId (created_by) is null or not found in agency document.');
+      }
+    } else {
+      print('Error: Agency document with id ${invitation['agencyId']} does not exist.');
     }
+  } catch (e) {
+    print('Error notifying agency: $e');
+    // Handle error gracefully, e.g., show snackbar or alert
   }
+}
 
   @override
   Widget build(BuildContext context) {
