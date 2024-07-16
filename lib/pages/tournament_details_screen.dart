@@ -89,17 +89,6 @@ class TournamentDetailsScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
                 Text(
-                  'This bracket is a preview and subject to change until the tournament is started.',
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Bracket Preview: ${tournamentDoc['full_challonge_url'] ?? 'Not available'}',
-                  style: TextStyle(fontSize: 16, color: Colors.blue),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 20),
-                Text(
                   'Confirmed Participants:',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
@@ -147,6 +136,13 @@ class TournamentDetailsScreen extends StatelessWidget {
                     _createBracket(context);
                   },
                   child: Text('Create Bracket'),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    _endTournament(context);
+                  },
+                  child: Text('End Tournament'),
                 ),
                 SizedBox(height: 20),
                 _buildQrCodeContainer(),
@@ -268,32 +264,45 @@ class TournamentDetailsScreen extends StatelessWidget {
     return participants;
   }
 
-  Future<void> _addParticipantsToTournament(
-      int tournamentId, List<String> participants) async {
-    for (String participant in participants) {
-      String apiUrl =
-          'http://localhost:3000/add-player'; // Proxy server URL for adding players
+  Future<void> _endTournament(BuildContext context) async {
+    try {
+      // Fetch all match details
+      final matchDetails = await _fetchMatchDetails();
 
-      try {
-        final response = await http.post(Uri.parse(apiUrl),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'tournament_id': tournamentId,
-              'participant': {
-                'name': participant,
-              }
-            }));
-
-        if (response.statusCode == 200) {
-          print('Participant added: $participant');
-        } else {
-          print('Failed to add participant: ${response.statusCode}');
-        }
-      } catch (e) {
-        print('Error adding participant: $e');
+      for (var match in matchDetails) {
+        await FirebaseFirestore.instance
+            .collection('matches')
+            .doc(tournamentDoc.id) // Use tournament ID as document ID
+            .set(match); // Save match details
       }
+
+      // Optionally, update tournament status in Firestore
+      await FirebaseFirestore.instance
+          .collection('tournaments')
+          .doc(tournamentDoc.id)
+          .update({'status': 'ended'});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tournament ended and details saved')),
+      );
+    } catch (e) {
+      print('Error ending tournament: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error ending tournament')),
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchMatchDetails() async {
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/tournament/${tournamentDoc.id}/matches'),
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> matches = jsonDecode(response.body);
+      return matches.map((match) => match as Map<String, dynamic>).toList();
+    } else {
+      throw Exception('Failed to load match details');
     }
   }
 }

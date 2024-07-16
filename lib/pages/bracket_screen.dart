@@ -21,6 +21,8 @@ class _BracketScreenState extends State<BracketScreen> {
   List<dynamic> matches = [];
   bool isLoadingData = false;
   List<int> maxRounds = [];
+  bool isTournamentStarted = false;
+  bool isTournamentFinalized = false;
 
   @override
   void initState() {
@@ -35,28 +37,25 @@ class _BracketScreenState extends State<BracketScreen> {
 
     try {
       final participantsResponse = await http.get(
-        Uri.parse('http://localhost:3000/tournament/$tournamentId/participants'),
+        Uri.parse(
+            'http://localhost:3000/tournament/$tournamentId/participants'),
       );
 
       final matchesResponse = await http.get(
         Uri.parse('http://localhost:3000/tournament/$tournamentId/matches'),
       );
 
-      if (participantsResponse.statusCode == 200 && matchesResponse.statusCode == 200) {
+      if (participantsResponse.statusCode == 200 &&
+          matchesResponse.statusCode == 200) {
         setState(() {
           participants = jsonDecode(participantsResponse.body);
           matches = jsonDecode(matchesResponse.body);
           maxRounds = calculateMaxRounds();
           isLoadingData = false;
         });
+        checkTournamentState();
       } else {
-        print('Failed to fetch tournament data');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to fetch tournament data')),
-        );
-        setState(() {
-          isLoadingData = false;
-        });
+        throw Exception('Failed to fetch tournament data');
       }
     } catch (e) {
       print('Error fetching tournament data: $e');
@@ -67,6 +66,21 @@ class _BracketScreenState extends State<BracketScreen> {
         isLoadingData = false;
       });
     }
+  }
+
+  void checkTournamentState() {
+    for (var match in matches) {
+      if (match['match']['state'] == 'open' ||
+          match['match']['state'] == 'complete') {
+        setState(() {
+          isTournamentStarted = true;
+        });
+        return;
+      }
+    }
+    setState(() {
+      isTournamentStarted = false;
+    });
   }
 
   List<int> calculateMaxRounds() {
@@ -83,34 +97,178 @@ class _BracketScreenState extends State<BracketScreen> {
   void showMatchDetails(BuildContext context, Map<String, dynamic> match) {
     final player1 = getPlayer(match['player1_id']);
     final player2 = getPlayer(match['player2_id']);
-    final winner = getPlayer(match['winner_id']);
-    final loser = getPlayer(match['loser_id']);
+    String player1Score = '';
+    String player2Score = '';
+    int? winnerId = match['winner_id'];
+    String matchScore =
+        match['scores_csv'] ?? 'Not reported'; // Access scores_csv directly
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text('Match Details'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Player 1: ${player1?['participant']['name'] ?? 'TBD'}'),
-              Text('Player 2: ${player2?['participant']['name'] ?? 'TBD'}'),
-              if (winner != null)
-                Text('Winner: ${winner['participant']['name']}'),
-              if (loser != null) Text('Loser: ${loser['participant']['name']}'),
-              if (match['scores_csv'] != null && match['scores_csv'] != "")
-                Text('Scores: ${match['scores_csv']}'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Close'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Match Details'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Player 1: ${player1?['participant']['name'] ?? 'TBD'}'),
+                  Text('Player 2: ${player2?['participant']['name'] ?? 'TBD'}'),
+
+                  // Display match score
+                  Text('Score: $matchScore'),
+
+                  // Show winner if available
+                  if (winnerId != null)
+                    Text(
+                        'Winner: ${getPlayer(winnerId)?['participant']['name'] ?? 'TBD'}'),
+
+                  // Input fields for reporting scores if winner is not yet determined
+                  if (winnerId == null) ...[
+                    TextField(
+                      decoration: InputDecoration(labelText: 'Player 1 Score'),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        player1Score = value;
+                      },
+                    ),
+                    TextField(
+                      decoration: InputDecoration(labelText: 'Player 2 Score'),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        player2Score = value;
+                      },
+                    ),
+                    ListTile(
+                      title: Text('Player 1 wins'),
+                      leading: Radio<int>(
+                        value: match['player1_id'],
+                        groupValue: winnerId,
+                        onChanged: (int? value) {
+                          setDialogState(() {
+                            winnerId = value;
+                          });
+                        },
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('Player 2 wins'),
+                      leading: Radio<int>(
+                        value: match['player2_id'],
+                        groupValue: winnerId,
+                        onChanged: (int? value) {
+                          setDialogState(() {
+                            winnerId = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('Close'),
+                ),
+                if (winnerId == null)
+                  TextButton(
+                    onPressed: () {
+                      final loserId = (winnerId == match['player1_id'])
+                          ? match['player2_id']
+                          : match['player1_id'];
+                      reportScore(match['id'], player1Score, player2Score,
+                          winnerId, loserId);
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('Report Score'),
+                  ),
+              ],
+            );
+          },
         );
       },
+    );
+  }
+
+  Future<void> reportScore(int matchId, String player1Score,
+      String player2Score, int? winnerId, int? loserId) async {
+    final url =
+        'http://localhost:3000/tournaments/${widget.tournamentId}/matches/$matchId';
+
+    final response = await http.put(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'match': {
+          'scores_csv': '$player1Score-$player2Score',
+          'winner_id': winnerId,
+          'loser_id': loserId,
+        },
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Score reported successfully')),
+      );
+      fetchTournamentData(widget.tournamentId);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to report score')),
+      );
+    }
+  }
+
+  Future<void> startTournament() async {
+    final response = await http.post(
+      Uri.parse(
+          'http://localhost:3000/tournaments/${widget.tournamentId}/start'),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tournament started successfully')),
+      );
+      setState(() {
+        isTournamentStarted = true;
+      });
+      fetchTournamentData(widget.tournamentId);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start tournament')),
+      );
+    }
+  }
+
+  Future<void> finalizeTournament() async {
+    final response = await http.post(
+      Uri.parse(
+          'http://localhost:3000/tournaments/${widget.tournamentId}/finalize'),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tournament finalized successfully')),
+      );
+      setState(() {
+        isTournamentFinalized = true;
+      });
+      fetchTournamentData(widget.tournamentId);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to finalize tournament')),
+      );
+    }
+  }
+
+  Map<String, dynamic>? getPlayer(int? playerId) {
+    return participants.firstWhere(
+      (participant) => participant['participant']['id'] == playerId,
+      orElse: () => null,
     );
   }
 
@@ -119,94 +277,75 @@ class _BracketScreenState extends State<BracketScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Tournament Bracket'),
+        actions: [
+          if (!isTournamentStarted)
+            IconButton(
+              icon: Icon(Icons.play_arrow),
+              onPressed: startTournament,
+            ),
+          if (isTournamentStarted && !isTournamentFinalized)
+            IconButton(
+              icon: Icon(Icons.flag),
+              onPressed: finalizeTournament,
+            ),
+        ],
       ),
       body: isLoadingData
           ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          : ListView.builder(
               scrollDirection: Axis.horizontal,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: List.generate(maxRounds.length, (index) {
-                  int currentRound = maxRounds[index];
-                  List<dynamic> roundMatches = matches
-                      .where((match) => match['match']['round'] == currentRound)
-                      .toList();
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: List.generate(roundMatches.length, (matchIndex) {
-                      final match = roundMatches[matchIndex]['match'];
-                      final player1 = getPlayer(match['player1_id']);
-                      final player2 = getPlayer(match['player2_id']);
-                      return Container(
-                        margin: EdgeInsets.only(
-                            right: _matchRightPadding, bottom: _minMargin),
-                        child: GestureDetector(
-                          onTap: () => showMatchDetails(context, match),
-                          child: MatchWidget(
-                            match: match,
-                            player1: player1,
-                            player2: player2,
-                          ),
-                        ),
-                      );
-                    }),
-                  );
-                }),
-              ),
+              itemCount: maxRounds.length,
+              itemBuilder: (context, roundIndex) {
+                int currentRound = maxRounds[roundIndex];
+                List<dynamic> roundMatches = matches
+                    .where((match) => match['match']['round'] == currentRound)
+                    .toList();
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: roundMatches.map((matchData) {
+                    final match = matchData['match'];
+                    final player1 = getPlayer(match['player1_id']);
+                    final player2 = getPlayer(match['player2_id']);
+
+                    return Container(
+                      margin: EdgeInsets.only(
+                          right: _matchRightPadding, bottom: _minMargin),
+                      child: GestureDetector(
+                        onTap: () => showMatchDetails(context, match),
+                        child: matchBox(player1, player2),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
     );
   }
 
-  Map<String, dynamic>? getPlayer(int? playerId) {
-    if (playerId == null) return null;
-    return participants.firstWhere(
-      (p) => p['participant']['id'] == playerId,
-      orElse: () => null,
-    );
-  }
-}
-
-class MatchWidget extends StatelessWidget {
-  final Map<String, dynamic> match;
-  final Map<String, dynamic>? player1;
-  final Map<String, dynamic>? player2;
-
-  const MatchWidget({
-    Key? key,
-    required this.match,
-    this.player1,
-    this.player2,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget matchBox(
+      Map<String, dynamic>? player1, Map<String, dynamic>? player2) {
     return Container(
       height: _matchHeight,
       width: _matchWidth,
       decoration: BoxDecoration(
-        color: Colors.white,
         border: Border.all(color: Colors.black),
-        borderRadius: BorderRadius.circular(5.0),
+        borderRadius: BorderRadius.circular(8.0),
       ),
-      padding: EdgeInsets.all(8.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
             child: Text(
-              player1 != null ? player1!['participant']['name'] : 'TBD',
+              player1 != null ? player1['participant']['name'] : 'TBD',
               style: TextStyle(fontSize: 16.0),
               textAlign: TextAlign.center,
             ),
           ),
-          Divider(
-            height: 20,
-            thickness: 1,
-            color: Colors.black,
-          ),
+          Divider(color: Colors.black),
           Expanded(
             child: Text(
-              player2 != null ? player2!['participant']['name'] : 'TBD',
+              player2 != null ? player2['participant']['name'] : 'TBD',
               style: TextStyle(fontSize: 16.0),
               textAlign: TextAlign.center,
             ),

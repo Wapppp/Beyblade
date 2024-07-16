@@ -11,6 +11,108 @@ const port = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+app.post('/tournaments/:tournamentId/finalize', async (req, res) => {
+  const { tournamentId } = req.params;
+
+  const options = {
+    hostname: 'api.challonge.com',
+    port: 443,
+    path: `/v1/tournaments/${tournamentId}/finalize.json?api_key=aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa`,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
+  const apiRequest = https.request(options, (apiResponse) => {
+    let data = '';
+
+    apiResponse.on('data', (chunk) => {
+      data += chunk;
+    });
+
+    apiResponse.on('end', () => {
+      res.status(apiResponse.statusCode).json(JSON.parse(data));
+    });
+  });
+
+  apiRequest.on('error', (error) => {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
+
+  apiRequest.end();
+});
+
+app.post('/tournaments/:tournamentId/start', async (req, res) => {
+  const { tournamentId } = req.params;
+
+  const options = {
+    hostname: 'api.challonge.com',
+    port: 443,
+    path: `/v1/tournaments/${tournamentId}/start.json?api_key=aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa`,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
+  const apiRequest = https.request(options, (apiResponse) => {
+    let data = '';
+
+    apiResponse.on('data', (chunk) => {
+      data += chunk;
+    });
+
+    apiResponse.on('end', () => {
+      res.status(apiResponse.statusCode).json(JSON.parse(data));
+    });
+  });
+
+  apiRequest.on('error', (error) => {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
+
+  apiRequest.end();
+});
+// Update a match in a tournament
+app.put('/tournaments/:tournamentId/matches/:matchId', async (req, res) => {
+  const { tournamentId, matchId } = req.params;
+  const data = JSON.stringify(req.body);
+
+  const options = {
+    hostname: 'api.challonge.com',
+    port: 443,
+    path: `/v1/tournaments/${tournamentId}/matches/${matchId}.json?api_key=aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa`,
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': data.length,
+    },
+  };
+
+  const apiReq = https.request(options, (apiRes) => {
+    let responseData = '';
+
+    apiRes.on('data', (chunk) => {
+      responseData += chunk;
+    });
+
+    apiRes.on('end', () => {
+      res.status(apiRes.statusCode).json(JSON.parse(responseData));
+    });
+  });
+
+  apiReq.on('error', (e) => {
+    console.error(`Problem with request: ${e.message}`);
+    res.status(500).send('Internal Server Error');
+  });
+
+  apiReq.write(data);
+  apiReq.end();
+});
+
 // Check if a tournament exists
 app.post('/check-tournament', async (req, res) => {
   const { name } = req.body;
