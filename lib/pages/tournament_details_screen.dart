@@ -89,6 +89,17 @@ class TournamentDetailsScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
                 Text(
+                  'This bracket is a preview and subject to change until the tournament is started.',
+                  style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Bracket Preview: ${tournamentDoc['full_challonge_url'] ?? 'Not available'}',
+                  style: TextStyle(fontSize: 16, color: Colors.blue),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
+                Text(
                   'Confirmed Participants:',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
@@ -139,16 +150,6 @@ class TournamentDetailsScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 20),
                 _buildQrCodeContainer(),
-                Text(
-                  'This bracket is a preview and subject to change until the tournament is started.',
-                  style: TextStyle(fontSize: 16),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Bracket Preview: ${tournamentDoc['full_challonge_url'] ?? 'Not available'}',
-                  style: TextStyle(fontSize: 16, color: Colors.blue),
-                  textAlign: TextAlign.center,
-                ),
               ],
             ),
           );
