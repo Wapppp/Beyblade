@@ -1,6 +1,9 @@
 import 'package:beyblade/pages/agency_home_page.dart';
+import 'package:beyblade/pages/invite_sponsor_players.dart';
 import 'package:beyblade/pages/judge_home_page.dart';
 import 'package:beyblade/pages/news_page.dart';
+import 'package:beyblade/pages/notification_page.dart';
+import 'package:beyblade/pages/sponsors_profile.dart';
 import 'pages/sponsors_home_page.dart';
 import 'package:beyblade/pages/upgrade_account_page.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +44,11 @@ import 'pages/invite_players.dart';
 import 'pages/invitations_dialog.dart';
 import 'pages/invites_club_page.dart';
 import 'pages/mail_page.dart';
+import 'pages/create_sponsors_page.dart';
+import 'pages/sponsors_profile.dart';
+import 'pages/invite_sponsor_players.dart';
+import 'pages/notification_page.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -97,14 +105,18 @@ class MyApp extends StatelessWidget {
           '/manage-tournaments': (context) => ManageTournamentsScreen(),
           '/news': (context) => NewsPage(),
           '/agencyhome': (context) => AgencyHomePage(),
-          '/sponsorshome': (context) => SponsorsHomePage(),
-          '/judgehome': (context) => JudgeHomePage(),
+          '/createsponsors': (context) => CreateSponsorsPage(),
+          '/sponsorprofile': (context) => SponsorProfilePage(),
+          '/sponsorshome': (context) => SponsorHomePage(),
+          '/invitesponsorplayer': (context) => InviteSponsorsPage(),
+          '/judgehomepage': (context) => JudgeHomePage(),
           '/upgrade': (context) => UpgradeAccountPage(),
           '/createagency': (context) => CreateAgencyDialog(),
           '/agencyprofile': (context) => AgencyProfilePage(),
           '/inviteplayers': (context) => InvitePlayersPage(),
           '/inviteclubs': (context) => InviteClubLeadersPage(),
           '/mail': (context) => MailPage(),
+          '/notifications': (context) => NotificationsPage()
         },
         navigatorKey:
             sl<NavigationService>().navigatorKey, // Set navigatorKey from GetIt

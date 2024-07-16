@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,16 +19,26 @@ class _MailPageState extends State<MailPage> {
         return [];
       }
 
-      QuerySnapshot snapshot = await _firestore
+      List<Map<String, dynamic>> invitations = [];
+
+      // Fetch from invitations collection
+      QuerySnapshot snapshotInvitations = await _firestore
           .collection('invitations')
           .where('recipientId', isEqualTo: userId)
           .get();
 
-      List<Map<String, dynamic>> invitations = [];
-
-      for (var doc in snapshot.docs) {
+      for (var doc in snapshotInvitations.docs) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        // Fetch blader_name and email from users collection based on recipientId
+        DocumentSnapshot userSnapshot =
+            await _firestore.collection('users').doc(data['recipientId']).get();
+        String bladerName = userSnapshot['blader_name'];
+        String email = userSnapshot['email'];
+
         invitations.add({
+          'id': doc.id, // Add document ID for updating later
+          'source': 'invitations',
           'agencyEmail': data['agencyEmail'],
           'agencyId': data['agencyId'],
           'createdAt': data['createdAt'],
@@ -36,6 +47,39 @@ class _MailPageState extends State<MailPage> {
           'invitationTitle': data['invitationTitle'],
           'invitationDescription': data['invitationDescription'],
           'invitationMessage': data['invitationMessage'],
+          'bladerName': bladerName,
+          'email': email,
+        });
+      }
+
+      // Fetch from inviteclubs collection
+      QuerySnapshot snapshotInviteClubs = await _firestore
+          .collection('inviteclubs')
+          .where('recipientId', isEqualTo: userId)
+          .get();
+
+      for (var doc in snapshotInviteClubs.docs) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+        // Fetch blader_name and email from users collection based on recipientId
+        DocumentSnapshot userSnapshot =
+            await _firestore.collection('users').doc(data['recipientId']).get();
+        String bladerName = userSnapshot['blader_name'];
+        String email = userSnapshot['email'];
+
+        invitations.add({
+          'id': doc.id, // Add document ID for updating later
+          'source': 'inviteclubs',
+          'agencyEmail': data['agencyEmail'],
+          'agencyId': data['agencyId'],
+          'createdAt': data['createdAt'],
+          'recipientId': data['recipientId'],
+          'agencyName': data['agencyName'],
+          'invitationTitle': data['invitationTitle'],
+          'invitationDescription': data['invitationDescription'],
+          'invitationMessage': data['invitationMessage'],
+          'bladerName': bladerName,
+          'email': email,
         });
       }
 
@@ -63,6 +107,14 @@ class _MailPageState extends State<MailPage> {
               Text('Message:'),
               SizedBox(height: 5),
               Text(invitation['invitationMessage']),
+              SizedBox(height: 20),
+              Text('Blader Name:'),
+              SizedBox(height: 5),
+              Text(invitation['bladerName']),
+              SizedBox(height: 20),
+              Text('Email:'),
+              SizedBox(height: 5),
+              Text(invitation['email']),
             ],
           ),
           actions: [
@@ -70,11 +122,75 @@ class _MailPageState extends State<MailPage> {
               onPressed: () => Navigator.of(context).pop(),
               child: Text('Close'),
             ),
+            TextButton(
+              onPressed: () => _acceptInvitation(invitation),
+              child: Text('Accept'),
+            ),
+            TextButton(
+              onPressed: () => _declineInvitation(invitation),
+              child: Text('Decline'),
+            ),
           ],
         );
       },
     );
   }
+
+  void _acceptInvitation(Map<String, dynamic> invitation) async {
+    try {
+      await _firestore.collection(invitation['source']).doc(invitation['id']).delete();
+      _notifyAgency(invitation, 'accepted');
+      // Optionally: Add logic to update user or other actions
+    } catch (e) {
+      print('Error accepting invitation: $e');
+      // Handle error gracefully, e.g., show snackbar or alert
+    }
+  }
+
+  void _declineInvitation(Map<String, dynamic> invitation) async {
+    try {
+      await _firestore.collection(invitation['source']).doc(invitation['id']).delete();
+      _notifyAgency(invitation, 'declined');
+      // Optionally: Add logic to update user or other actions
+    } catch (e) {
+      print('Error declining invitation: $e');
+      // Handle error gracefully, e.g., show snackbar or alert
+    }
+  }
+void _notifyAgency(Map<String, dynamic> invitation, String status) async {
+  try {
+    // Fetch the agency document
+    DocumentSnapshot agencyDoc = await _firestore.collection('agencies').doc(invitation['agencyId']).get();
+
+    // Check if agencyDoc exists and contains data
+    if (agencyDoc.exists) {
+      // Get data map from agencyDoc
+      Map<String, dynamic> data = agencyDoc.data() as Map<String, dynamic>;
+
+      // Fetch userId safely from the data map
+      String? userId = data['created_by'];
+
+      if (userId != null) {
+        // Example notification message to the agency
+        String message = 'User ${invitation['bladerName']} has $status your invitation';
+
+        // Replace with your logic to notify the agency, e.g., send a Firestore message
+        await _firestore.collection('notifications').add({
+          'recipientId': userId,
+          'message': message,
+          'createdAt': Timestamp.now(),
+        });
+      } else {
+        print('Error: UserId (created_by) is null or not found in agency document.');
+      }
+    } else {
+      print('Error: Agency document with id ${invitation['agencyId']} does not exist.');
+    }
+  } catch (e) {
+    print('Error notifying agency: $e');
+    // Handle error gracefully, e.g., show snackbar or alert
+  }
+}
 
   @override
   Widget build(BuildContext context) {
