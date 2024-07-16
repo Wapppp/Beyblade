@@ -73,6 +73,12 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
         style: TextStyle(color: Colors.grey[300], fontSize: 24),
       ),
       actions: [
+        IconButton(
+          icon: Icon(Icons.notifications),
+          onPressed: () {
+            Navigator.pushNamed(context, '/notifications'); // Navigate to notifications page
+          },
+        ),
         _buildUserDropdown(),
       ],
       flexibleSpace: Container(

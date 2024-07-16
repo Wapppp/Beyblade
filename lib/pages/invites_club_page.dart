@@ -34,6 +34,7 @@ class _InviteClubLeadersPageState extends State<InviteClubLeadersPage> {
           'leader_name': data['leader_name'] ?? '',
           'email': data['leader_email'] ?? '',
           'clubId': doc.id,
+          'leaderId': data['leader'] ?? '',
         };
       }).toList();
     });
@@ -55,58 +56,50 @@ class _InviteClubLeadersPageState extends State<InviteClubLeadersPage> {
     });
   }
 
-  void _inviteClubLeader(
-      String email, String clubId, String agencyId, String agencyEmail) async {
-    if (email.isNotEmpty) {
-      DocumentSnapshot agencySnapshot = await FirebaseFirestore.instance
-          .collection('agencies')
-          .doc(agencyId)
+  void _inviteClubLeader(String leaderId, String clubId, String agencyId) async {
+    DocumentSnapshot agencySnapshot = await FirebaseFirestore.instance
+        .collection('agencies')
+        .doc(agencyId)
+        .get();
+
+    if (agencySnapshot.exists) {
+      QuerySnapshot existingInvitations = await FirebaseFirestore.instance
+          .collection('inviteclubs')
+          .where('recipientId', isEqualTo: leaderId)
+          .where('agencyId', isEqualTo: agencyId)
           .get();
 
-      if (agencySnapshot.exists) {
-        QuerySnapshot existingInvitations = await FirebaseFirestore.instance
-            .collection('invitations')
-            .where('recipientEmail', isEqualTo: email)
-            .where('agencyId', isEqualTo: agencyId)
-            .get();
+      if (existingInvitations.docs.isEmpty) {
+        await FirebaseFirestore.instance.collection('inviteclubs').add({
+          'recipientId': leaderId,
+          'agencyId': agencyId,
+          'agencyEmail': agencySnapshot['agency_email'],
+          'agencyName': agencySnapshot['agency_name'],
+          'invitationTitle': _invitationTitle,
+          'invitationDescription': _invitationDescription,
+          'invitationMessage': _invitationMessage,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
 
-        if (existingInvitations.docs.isEmpty) {
-          await FirebaseFirestore.instance.collection('invitations').add({
-            'recipientEmail': email,
-            'agencyId': agencyId,
-            'agencyEmail': agencySnapshot['agency_email'],
-            'agencyName': agencySnapshot['agency_name'],
-            'invitationTitle': _invitationTitle,
-            'invitationDescription': _invitationDescription,
-            'invitationMessage': _invitationMessage,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+        // Send the email (this part needs a backend service to handle the email sending)
+        // For example, using Firebase Functions or any other email service.
 
-          // Send the email (this part needs a backend service to handle the email sending)
-          // For example, using Firebase Functions or any other email service.
-
-          print('Invited club leader: $email');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    'Invitation sent to $email from ${agencySnapshot['agency_name']}')),
-          );
-        } else {
-          print('User already invited by this agency');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('User already invited by this agency')),
-          );
-        }
-      } else {
-        print('Agency not found');
+        print('Invited club leader with ID: $leaderId');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Selected agency not found')),
+          SnackBar(
+              content: Text(
+                  'Invitation sent to ${leaderId} from ${agencySnapshot['agency_name']}')),
+        );
+      } else {
+        print('User already invited by this agency');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('User already invited by this agency')),
         );
       }
     } else {
-      print('Invalid email address');
+      print('Agency not found');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid email address')),
+        SnackBar(content: Text('Selected agency not found')),
       );
     }
   }
@@ -190,8 +183,8 @@ class _InviteClubLeadersPageState extends State<InviteClubLeadersPage> {
               itemBuilder: (context) =>
                   _buildPopupMenuItems(clubLeader['clubId']),
               onSelected: (String agencyId) {
-                _inviteClubLeader(clubLeader['email'], clubLeader['clubId'],
-                    agencyId, 'agencyEmail');
+                _inviteClubLeader(clubLeader['leaderId'], clubLeader['clubId'],
+                    agencyId);
               },
               icon: Icon(Icons.mail),
             ),

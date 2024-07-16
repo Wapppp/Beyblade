@@ -5,12 +5,12 @@ import 'package:beyblade/pages/login_page.dart'; // Replace with your login page
 import 'data/navigation_service.dart';
 import 'data/injection_container.dart';
 
-class SponsorsHomePage extends StatefulWidget {
+class SponsorHomePage extends StatefulWidget {
   @override
-  _SponsorsHomePageState createState() => _SponsorsHomePageState();
+  _SponsorHomePageState createState() => _SponsorHomePageState();
 }
 
-class _SponsorsHomePageState extends State<SponsorsHomePage> {
+class _SponsorHomePageState extends State<SponsorHomePage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   int _selectedIndex = 0;
@@ -35,24 +35,22 @@ class _SponsorsHomePageState extends State<SponsorsHomePage> {
 
         if (sponsorSnapshot.docs.isNotEmpty) {
           setState(() {
-            _sponsorName = sponsorSnapshot.docs.first.get('sponsor_name') ?? 'Sponsor';
-            // Check if 'role' field exists before setting
+            _sponsorName =
+                sponsorSnapshot.docs.first.get('agency_name') ?? 'Sponsor';
             if (sponsorSnapshot.docs.first.data().containsKey('role')) {
               _userRole = sponsorSnapshot.docs.first.get('role');
             } else {
-              _userRole = ''; // Handle default or fallback role here
+              _userRole = '';
             }
           });
         } else {
-          // If no sponsor found for the user, set default values
           setState(() {
-            _sponsorName = 'Sponsor'; // Default name if not found
+            _sponsorName = 'Sponsor';
             _userRole = '';
           });
         }
       } catch (e) {
         print('Error fetching sponsor information: $e');
-        // Handle error if necessary
       }
     }
   }
@@ -62,20 +60,20 @@ class _SponsorsHomePageState extends State<SponsorsHomePage> {
     return Scaffold(
       appBar: _buildAppBar(),
       body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavigationBar(), // Integrated bottom navigation bar
-      backgroundColor: Colors.grey[900], // Setting background color
+      bottomNavigationBar: _buildBottomNavigationBar(),
+      backgroundColor: Colors.grey[900],
     );
   }
 
   AppBar _buildAppBar() {
     return AppBar(
-      automaticallyImplyLeading: false, // This will remove the back button
+      automaticallyImplyLeading: false,
       title: Text(
-        _sponsorName, // Displaying sponsor_name as the title
+        _sponsorName,
         style: TextStyle(color: Colors.grey[300], fontSize: 24),
       ),
       actions: [
-        _buildUserDropdown(), // Dropdown for user actions
+        _buildUserDropdown(),
       ],
       flexibleSpace: Container(
         decoration: BoxDecoration(
@@ -91,16 +89,35 @@ class _SponsorsHomePageState extends State<SponsorsHomePage> {
 
   Widget _buildBody() {
     return Center(
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/inviteplayers'); // Navigate to InvitePlayersPage
-        },
-        child: Text('Invite Players', style: TextStyle(fontSize: 18)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange,
-          padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/invitesponsorplayer');
+            },
+            child: Text('Invite Players', style: TextStyle(fontSize: 18)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/inviteclubs');
+            },
+            child: Text('Invite Club', style: TextStyle(fontSize: 18)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -110,27 +127,27 @@ class _SponsorsHomePageState extends State<SponsorsHomePage> {
       return DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: 'Hello, $_bladerName',
-          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]), // Adjust icon color if needed
+          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
           onChanged: (String? newValue) {
             if (newValue == 'Logout') {
-              _signOut(); // Call _signOut method here
+              _signOut();
             } else if (newValue == 'My Profile') {
               Navigator.pushNamed(context, '/profile');
             } else if (newValue == 'Sponsor Profile') {
-              Navigator.pushNamed(context, '/sponsorprofile'); // Navigate to SponsorProfilePage
+              Navigator.pushNamed(context, '/sponsorprofile');
             }
           },
           items: <String>[
             'Hello, $_bladerName',
             'My Profile',
-            'Sponsor Profile', // Add this option
+            'Sponsor Profile',
             'Logout'
           ].map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Text(
                 value,
-                style: TextStyle(color: Colors.grey[500]), // Set text color to white
+                style: TextStyle(color: Colors.grey[500]),
               ),
             );
           }).toList(),
@@ -145,7 +162,7 @@ class _SponsorsHomePageState extends State<SponsorsHomePage> {
     return BottomNavigationBar(
       currentIndex: _selectedIndex,
       onTap: _onBottomNavigationBarTapped,
-      backgroundColor: Colors.grey[900], // Keeping the background color
+      backgroundColor: Colors.grey[900],
       selectedItemColor: Colors.orange,
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
@@ -178,13 +195,15 @@ class _SponsorsHomePageState extends State<SponsorsHomePage> {
     setState(() {
       _selectedIndex = index;
     });
-    // Handle navigation based on index
     switch (index) {
       case 0:
-        sl<NavigationService>().navigatorKey.currentState!.pushNamed('/sponsorshome');
+        sl<NavigationService>()
+            .navigatorKey
+            .currentState!
+            .pushNamed('/sponsorhome');
         break;
       case 1:
-        Navigator.pushNamed(context, '/tournaments');
+        Navigator.pushNamed(context, '/profile');
         break;
       case 2:
         Navigator.pushNamed(context, '/rankings');

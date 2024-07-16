@@ -92,7 +92,7 @@ class _LoginPageState extends State<LoginPage> {
   void _navigateToSponsorsHomePage() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => SponsorsHomePage()),
+      MaterialPageRoute(builder: (context) => SponsorHomePage()),
     );
   }
 

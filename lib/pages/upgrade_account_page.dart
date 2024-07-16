@@ -40,7 +40,7 @@ void _assignRole(String role) async {
               Navigator.pushReplacementNamed(context, '/createsponsors');
               break;
             case 'judge':
-              Navigator.pushReplacementNamed(context, '/judgehome');
+              Navigator.pushReplacementNamed(context, '/judgehomepage');
               break;
             default:
               Navigator.pushReplacementNamed(context, '/home');
