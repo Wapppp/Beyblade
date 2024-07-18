@@ -269,12 +269,16 @@ class TournamentDetailsScreen extends StatelessWidget {
       // Fetch all match details
       final matchDetails = await _fetchMatchDetails();
 
+      // Save match details to Firestore using tournament ID as the document ID
       for (var match in matchDetails) {
         await FirebaseFirestore.instance
             .collection('matches')
             .doc(tournamentDoc.id) // Use tournament ID as document ID
             .set(match); // Save match details
       }
+
+      // Calculate and save participants' stats
+      await _recordParticipantStats();
 
       // Optionally, update tournament status in Firestore
       await FirebaseFirestore.instance
@@ -303,6 +307,63 @@ class TournamentDetailsScreen extends StatelessWidget {
       return matches.map((match) => match as Map<String, dynamic>).toList();
     } else {
       throw Exception('Failed to load match details');
+    }
+  }
+
+  Future<void> _recordParticipantStats() async {
+    final participantsSnapshot = await FirebaseFirestore.instance
+        .collection('participants')
+        .where('tournament_id', isEqualTo: tournamentDoc.id)
+        .get();
+
+    final participants =
+        participantsSnapshot.docs.map((doc) => doc.data()).toList();
+
+    // Create a map to hold participants' stats
+    final stats = <String, Map<String, dynamic>>{};
+
+    for (var participant in participants) {
+      final name = participant['blader_name'] as String;
+      final docId = '${tournamentDoc.id}_$name';
+      stats[docId] = {
+        'win': 0,
+        'lose': 0,
+        'score': 0,
+      };
+    }
+
+    final matchDetails = await _fetchMatchDetails();
+
+    // Calculate stats for each participant
+    for (var match in matchDetails) {
+      final winnerName = match['winner_name'] as String?;
+      final loserName = match['loser_name'] as String?;
+      final winnerScore = match['winner_score'] as int? ?? 0;
+      final loserScore = match['loser_score'] as int? ?? 0;
+
+      if (winnerName != null) {
+        final winnerDocId = '${tournamentDoc.id}_$winnerName';
+        if (stats.containsKey(winnerDocId)) {
+          stats[winnerDocId]!['win'] += 1;
+          stats[winnerDocId]!['score'] += winnerScore;
+        }
+      }
+
+      if (loserName != null) {
+        final loserDocId = '${tournamentDoc.id}_$loserName';
+        if (stats.containsKey(loserDocId)) {
+          stats[loserDocId]!['lose'] += 1;
+          stats[loserDocId]!['score'] += loserScore;
+        }
+      }
+    }
+
+    // Save stats to Firestore
+    for (var entry in stats.entries) {
+      await FirebaseFirestore.instance
+          .collection('participants')
+          .doc(entry.key)
+          .update(entry.value);
     }
   }
 }

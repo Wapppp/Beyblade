@@ -31,16 +31,17 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
 
   void _checkParticipantStatus() async {
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+      String bladerName = await _fetchBladerName(currentUser!.uid);
+      String documentId = '${widget.tournament.id}_$bladerName';
+      DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('participants')
-          .where('tournament_id', isEqualTo: widget.tournament.id)
-          .where('user_id', isEqualTo: currentUser!.uid)
+          .doc(documentId)
           .get();
 
-      if (querySnapshot.docs.isNotEmpty) {
+      if (doc.exists) {
         setState(() {
           isParticipant = true;
-          participantId = querySnapshot.docs.first.id;
+          participantId = documentId;
         });
       } else {
         setState(() {
@@ -74,15 +75,21 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
 
     if (isOrganizer) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Organizers cannot pre-register for this tournament')),
+        SnackBar(
+            content:
+                Text('Organizers cannot pre-register for this tournament')),
       );
       return;
     }
 
     String bladerName = await _fetchBladerName(currentUser!.uid);
+    String documentId = '${widget.tournament.id}_$bladerName';
 
     try {
-      await FirebaseFirestore.instance.collection('participants').add({
+      await FirebaseFirestore.instance
+          .collection('participants')
+          .doc(documentId)
+          .set({
         'tournament_id': widget.tournament.id,
         'user_id': currentUser!.uid,
         'blader_name': bladerName,
@@ -90,6 +97,7 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
       });
       setState(() {
         isParticipant = true;
+        participantId = documentId;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Pre-registered for Tournament')),
@@ -158,7 +166,8 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
       // Update participant status to confirmed
       await FirebaseFirestore.instance
           .collection('participants')
-          .doc(participantId) // Use participantId to update the existing document
+          .doc(
+              participantId) // Use participantId to update the existing document
           .update({'status': 'confirmed'});
 
       setState(() {
@@ -191,7 +200,8 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
-            Text('Date: ${_formatTimestamp(widget.tournament.event_date_time)}'),
+            Text(
+                'Date: ${_formatTimestamp(widget.tournament.event_date_time)}'),
             SizedBox(height: 8),
             Text('Location: ${widget.tournament.location}'),
             SizedBox(height: 8),
@@ -201,7 +211,9 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
               onPressed: isOrganizer || isParticipant
                   ? null
                   : () => _preRegisterTournament(context),
-              child: Text(isParticipant ? 'Pre-Registered' : 'Pre-Register for Tournament'),
+              child: Text(isParticipant
+                  ? 'Pre-Registered'
+                  : 'Pre-Register for Tournament'),
             ),
             if (isParticipant)
               ElevatedButton(
@@ -220,7 +232,8 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => QRScannerPage(onQRViewCreated: _onQRViewCreated),
+                  builder: (context) =>
+                      QRScannerPage(onQRViewCreated: _onQRViewCreated),
                 ),
               ),
               child: Text('Scan QR Code'),
@@ -270,21 +283,26 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
                     return CircleAvatar(
                       child: Text(participant.bladerName[0]),
                     );
-                  } else if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+                  } else if (snapshot.hasError ||
+                      !snapshot.hasData ||
+                      !snapshot.data!.exists) {
                     return CircleAvatar(
                       child: Text(participant.bladerName[0]),
                     );
                   } else {
-                    var profileData = snapshot.data!.data() as Map<String, dynamic>;
+                    var profileData =
+                        snapshot.data!.data() as Map<String, dynamic>;
                     return CircleAvatar(
-                      backgroundImage: NetworkImage(profileData['profile_picture'] ?? ''),
+                      backgroundImage:
+                          NetworkImage(profileData['profile_picture'] ?? ''),
                       child: Text(participant.bladerName[0]),
                     );
                   }
                 },
               ),
               title: Text(participant.bladerName),
-              subtitle: Text(participant.status), // Display the status of the participant
+              subtitle: Text(
+                  participant.status), // Display the status of the participant
             );
           },
         );
