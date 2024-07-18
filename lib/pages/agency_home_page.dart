@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:beyblade/pages/login_page.dart'; // Replace with your login page import
 import 'data/navigation_service.dart';
 import 'data/injection_container.dart';
@@ -17,6 +17,7 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
   String _agencyName = '';
   String _userRole = '';
   String _bladerName = '';
+  String _userId = ''; // New field to store the userId
 
   @override
   void initState() {
@@ -28,30 +29,54 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
     final user = _auth.currentUser;
     if (user != null) {
       try {
-        final agencySnapshot = await _firestore
-            .collection('agencies')
-            .where('created_by', isEqualTo: user.uid)
-            .get();
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
 
-        if (agencySnapshot.docs.isNotEmpty) {
+        if (userDoc.exists) {
+          final userData = userDoc.data() as Map<String, dynamic>;
+
           setState(() {
-            _agencyName =
-                agencySnapshot.docs.first.get('agency_name') ?? 'Agency';
-            if (agencySnapshot.docs.first.data().containsKey('role')) {
-              _userRole = agencySnapshot.docs.first.get('role');
+            _bladerName = userData['blader_name'] ?? '';
+            _userRole = userData['role'] ?? '';
+            _userId = user.uid; // Store the userId
+
+            // Check if the user has an agency_id and load agency details if applicable
+            final agencyId = userData['agency_id'];
+            if (agencyId != null && agencyId.isNotEmpty) {
+              _loadAgencyDetails(agencyId);
             } else {
-              _userRole = '';
+              _agencyName = 'Agency';
             }
           });
         } else {
           setState(() {
             _agencyName = 'Agency';
             _userRole = '';
+            _bladerName = user.displayName ?? '';
           });
         }
       } catch (e) {
-        print('Error fetching agency information: $e');
+        print('Error fetching user information: $e');
       }
+    }
+  }
+
+  void _loadAgencyDetails(String agencyId) async {
+    try {
+      final agencyDoc =
+          await _firestore.collection('agencies').doc(agencyId).get();
+
+      if (agencyDoc.exists) {
+        setState(() {
+          _agencyName = agencyDoc.get('agency_name') ?? 'Agency';
+        });
+      } else {
+        setState(() {
+          _agencyName = 'Agency';
+        });
+      }
+    } catch (e) {
+      print('Error fetching agency information: $e');
     }
   }
 
@@ -76,7 +101,7 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
         IconButton(
           icon: Icon(Icons.notifications),
           onPressed: () {
-            Navigator.pushNamed(context, '/notifications'); // Navigate to notifications page
+            _navigateToNotifications(); // Navigate to notifications page
           },
         ),
         _buildUserDropdown(),
@@ -94,35 +119,39 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
   }
 
   Widget _buildBody() {
+    print('User Role: $_userRole'); // Add this line to debug
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/inviteplayers');
-            },
-            child: Text('Invite Players', style: TextStyle(fontSize: 18)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+          if (_userRole == 'agency') ...[
+            ElevatedButton(
+              onPressed: () {
+                _navigateToInvitePlayers(); // Navigate to invite players page
+              },
+              child: Text('Invite Players', style: TextStyle(fontSize: 18)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
             ),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/inviteclubs');
-            },
-            child: Text('Invite Club', style: TextStyle(fontSize: 18)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                _navigateToInviteClubs(); // Navigate to invite clubs page
+              },
+              child: Text('Invite Club', style: TextStyle(fontSize: 18)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -138,9 +167,9 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
             if (newValue == 'Logout') {
               _signOut();
             } else if (newValue == 'My Profile') {
-              Navigator.pushNamed(context, '/profile');
+              _navigateToProfile();
             } else if (newValue == 'Agency Profile') {
-              Navigator.pushNamed(context, '/agencyprofile');
+              _navigateToAgencyProfile();
             }
           },
           items: <String>[
@@ -209,7 +238,7 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
             .pushNamed('/agencyhome');
         break;
       case 1:
-        Navigator.pushNamed(context, '/profile');
+        _navigateToProfile();
         break;
       case 2:
         Navigator.pushNamed(context, '/rankings');
@@ -229,5 +258,25 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
       context,
       MaterialPageRoute(builder: (context) => LoginPage()),
     );
+  }
+
+  void _navigateToInvitePlayers() {
+    Navigator.pushNamed(context, '/inviteplayers', arguments: _userId);
+  }
+
+  void _navigateToInviteClubs() {
+    Navigator.pushNamed(context, '/inviteclubs', arguments: _userId);
+  }
+
+  void _navigateToNotifications() {
+    Navigator.pushNamed(context, '/inviteresponse', arguments: _userId);
+  }
+
+  void _navigateToProfile() {
+    Navigator.pushNamed(context, '/profile');
+  }
+
+  void _navigateToAgencyProfile() {
+    Navigator.pushNamed(context, '/agencyprofile');
   }
 }

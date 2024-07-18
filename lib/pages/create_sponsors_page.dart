@@ -50,7 +50,8 @@ class _CreateSponsorsPageState extends State<CreateSponsorsPage> {
     );
   }
 
-  Widget _buildTextField({required TextEditingController controller, required String labelText}) {
+  Widget _buildTextField(
+      {required TextEditingController controller, required String labelText}) {
     return TextField(
       controller: controller,
       style: TextStyle(color: Colors.white),
@@ -91,14 +92,27 @@ class _CreateSponsorsPageState extends State<CreateSponsorsPage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Add sponsor to Firestore with createdBy field
-        DocumentReference docRef = await FirebaseFirestore.instance
-            .collection('sponsors')
-            .add({
-              'sponsor_name': sponsorName,
-              'sponsor_email': sponsorEmail,
-              'createdBy': user.uid, // Set createdBy to current user's ID
-            });
+        // Add sponsor to Firestore with createdBy field and sponsor_id
+        DocumentReference docRef =
+            await FirebaseFirestore.instance.collection('sponsors').add({
+          'sponsor_name': sponsorName,
+          'sponsor_email': sponsorEmail,
+          'createdBy': user.uid, // Set createdBy to current user's ID
+          'sponsor_id': '', // Placeholder for sponsor_id
+        });
+
+        // Update sponsor_id with document ID (as string)
+        await docRef.update({
+          'sponsor_id': docRef.id,
+        });
+
+        // Update user document with sponsor_id
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({
+          'sponsor_id': docRef.id, // Set sponsor_id as string directly
+        });
 
         print('Sponsor added to Firestore: ${docRef.id}');
 

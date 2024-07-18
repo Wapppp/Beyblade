@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class InvitePlayersPage extends StatefulWidget {
@@ -7,161 +8,35 @@ class InvitePlayersPage extends StatefulWidget {
 }
 
 class _InvitePlayersPageState extends State<InvitePlayersPage> {
-  List<Map<String, dynamic>> _players = [];
-  List<Map<String, dynamic>> _agencies = [];
-  String _invitationTitle = 'Invitation to Join Our Agency';
-  String _invitationDescription =
-      'We are excited to invite you to join our agency. Here are the details:';
-  String _invitationMessage = 'You have been invited to join our agency!';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? currentUserId;
+  String? currentUserAgencyId;
 
   @override
   void initState() {
     super.initState();
-    _fetchPlayers();
-    _fetchAgencies();
+    _getCurrentUser();
   }
 
-  Future<void> _fetchPlayers() async {
-    QuerySnapshot snapshot =
-        await FirebaseFirestore.instance.collection('users').get();
-    setState(() {
-      _players = snapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        return {
-          'blader_name': data['blader_name'] ?? 'No Name',
-          'email': data['email'] ?? '',
-          'userId': doc.id,
-        };
-      }).toList();
-    });
-  }
-
-  Future<void> _fetchAgencies() async {
-    QuerySnapshot snapshot =
-        await FirebaseFirestore.instance.collection('agencies').get();
-    setState(() {
-      _agencies = snapshot.docs.map((doc) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        return {
-          'agency_name': data['agency_name'] ?? 'No Agency Name',
-          'agency_email': data['agency_email'] ?? '',
-          'contact': data['contact'] ?? '',
-          'agencyId': doc.id,
-        };
-      }).toList();
-    });
-  }
-
-  void _invitePlayer(
-      String email, String userId, String agencyId, String agencyEmail) async {
-    if (email.isNotEmpty) {
-      DocumentSnapshot agencySnapshot = await FirebaseFirestore.instance
-          .collection('agencies')
-          .doc(agencyId)
-          .get();
-
-      if (agencySnapshot.exists) {
-        QuerySnapshot existingInvitations = await FirebaseFirestore.instance
-            .collection('invitations')
-            .where('recipientId', isEqualTo: userId)
-            .where('agencyEmail', isEqualTo: agencyEmail)
-            .get();
-
-        if (existingInvitations.docs.isEmpty) {
-          await FirebaseFirestore.instance.collection('invitations').add({
-            'recipientId': userId,
-            'agencyId': agencyId,
-            'agencyEmail': agencySnapshot['agency_email'],
-            'agencyName': agencySnapshot['agency_name'],
-            'invitationTitle': _invitationTitle,
-            'invitationDescription': _invitationDescription,
-            'invitationMessage': _invitationMessage,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-
-          // Send the email (this part needs a backend service to handle the email sending)
-          // For example, using Firebase Functions or any other email service.
-
-          print('Invited player: $email');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    'Invitation sent to $email from ${agencySnapshot['agency_name']}')),
-          );
-        } else {
-          print('User already invited by this agency');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('User already invited by this agency')),
-          );
-        }
+  Future<void> _getCurrentUser() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser != null) {
+      final userSnapshot =
+          await _firestore.collection('users').doc(currentUser.uid).get();
+      if (userSnapshot.exists) {
+        setState(() {
+          currentUserId = currentUser.uid;
+          currentUserAgencyId = userSnapshot.get('agency_id');
+        });
       } else {
-        print('Agency not found');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Selected agency not found')),
-        );
+        print('User document does not exist');
+        // Handle case where user document does not exist
       }
     } else {
-      print('Invalid email address');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid email address')),
-      );
+      print('Current user is null');
+      // Handle case where current user is null
     }
-  }
-
-  Future<void> _editInvitationMessage() async {
-    TextEditingController titleController =
-        TextEditingController(text: _invitationTitle);
-    TextEditingController descriptionController =
-        TextEditingController(text: _invitationDescription);
-    TextEditingController messageController =
-        TextEditingController(text: _invitationMessage);
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Edit Invitation'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(
-                  labelText: 'Title',
-                ),
-              ),
-              TextField(
-                controller: descriptionController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Description',
-                ),
-              ),
-              TextField(
-                controller: messageController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Message',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _invitationTitle = titleController.text;
-                  _invitationDescription = descriptionController.text;
-                  _invitationMessage = messageController.text;
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -169,40 +44,158 @@ class _InvitePlayersPageState extends State<InvitePlayersPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Invite Players'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.edit),
-            onPressed: _editInvitationMessage,
-          ),
-        ],
       ),
-      body: ListView.builder(
-        itemCount: _players.length,
-        itemBuilder: (context, index) {
-          final player = _players[index];
-          return ListTile(
-            title: Text(player['blader_name']),
-            subtitle: Text(player['email']),
-            trailing: PopupMenuButton(
-              itemBuilder: (context) => _buildPopupMenuItems(player['userId']),
-              onSelected: (String agencyId) {
-                _invitePlayer(
-                    player['email'], player['userId'], agencyId, 'agencyEmail');
-              },
-              icon: Icon(Icons.mail),
-            ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore.collection('users').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text('No users available'));
+          }
+
+          final users = snapshot.data!.docs;
+          return ListView.builder(
+            itemCount: users.length,
+            itemBuilder: (context, index) {
+              final user = users[index];
+              return ListTile(
+                title: Text(user['blader_name']),
+                subtitle: Text(user['email']),
+                trailing: IconButton(
+                  icon: Icon(Icons.mail),
+                  onPressed: currentUserId != null
+                      ? () => _showInviteDialog(user.id, user['blader_name'])
+                      : null,
+                ),
+              );
+            },
           );
         },
       ),
     );
   }
 
-  List<PopupMenuEntry<String>> _buildPopupMenuItems(String userId) {
-    return _agencies.map((agency) {
-      return PopupMenuItem<String>(
-        value: agency['agencyId'],
-        child: Text(agency['agency_name']),
-      );
-    }).toList();
+  void _showInviteDialog(String userId, String bladerName) {
+    String title = '';
+    String message = '';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Send Invitation to $bladerName'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: 'Title'),
+                onChanged: (value) {
+                  title = value;
+                },
+              ),
+              TextField(
+                decoration: InputDecoration(labelText: 'Message'),
+                onChanged: (value) {
+                  message = value;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _inviteUser(userId, title, message);
+              },
+              child: Text('Send'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _inviteUser(String userId, String title, String message) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser != null) {
+      try {
+        // Fetch current user's agency ID
+        final userSnapshot =
+            await _firestore.collection('users').doc(currentUserId).get();
+
+        if (userSnapshot.exists) {
+          final currentUserAgencyId = userSnapshot.get('agency_id');
+
+          // Fetch agency document using created_by field
+          final agencySnapshot = await _firestore
+              .collection('agencies')
+              .doc(currentUserAgencyId)
+              .get();
+
+          if (agencySnapshot.exists) {
+            final currentUserAgencyName = agencySnapshot.get('agency_name');
+
+            // Check if there is already an invitation sent to this user by this agency
+            final invitationExists = await _firestore
+                .collection('invitations')
+                .where('agencyId', isEqualTo: currentUserAgencyId)
+                .where('recipientId', isEqualTo: userId)
+                .get();
+
+            if (invitationExists.docs.isEmpty) {
+              // If no existing invitation, send a new invitation
+              await _firestore.collection('invitations').add({
+                'agencyId': currentUserAgencyId,
+                'agencyName': currentUserAgencyName,
+                'recipientId': userId,
+                'createdAt': Timestamp.now(),
+                'agencyEmail': currentUser.email,
+                'invitedBy': currentUserId,
+                'status': 'pending', // Initial status is pending
+                'title': title,
+                'message': message,
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Invitation sent')),
+              );
+            } else {
+              // If invitation already exists, show a message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('User already invited by this agency')),
+              );
+            }
+          } else {
+            // Handle case where agency document is not found
+            print('Agency document does not exist');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content:
+                      Text('Failed to send invitation. Agency not found.')),
+            );
+          }
+        } else {
+          // Handle case where user document does not exist
+          print('User document does not exist');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Failed to send invitation. User not found.')),
+          );
+        }
+      } catch (e) {
+        print('Error inviting user: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send invitation')),
+        );
+      }
+    }
   }
 }

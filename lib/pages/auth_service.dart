@@ -5,6 +5,10 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Getter to fetch current user ID
+  String? get currentUserId => _auth.currentUser?.uid;
+
+  // Register user with email and password
   Future<UserCredential> registerWithEmailAndPassword(
       String email, String password, String name) async {
     try {
@@ -28,6 +32,7 @@ class AuthService {
     }
   }
 
+  // Sign in user with email and password
   Future<UserCredential> signInWithEmailAndPassword(
       String email, String password) async {
     try {
@@ -44,10 +49,12 @@ class AuthService {
     }
   }
 
+  // Sign out the current user
   Future<void> signOut() async {
     await _auth.signOut();
   }
 
+  // Store user data in Firestore upon registration
   Future<void> _storeUserDataInFirestore(
       User user, String name, String email) async {
     try {
@@ -64,6 +71,7 @@ class AuthService {
     }
   }
 
+  // Handle authentication error codes
   String _handleAuthError(String errorCode) {
     switch (errorCode) {
       case 'email-already-in-use':

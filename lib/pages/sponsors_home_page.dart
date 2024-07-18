@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:beyblade/pages/login_page.dart'; // Replace with your login page import
 import 'data/navigation_service.dart';
 import 'data/injection_container.dart';
@@ -17,6 +17,7 @@ class _SponsorHomePageState extends State<SponsorHomePage> {
   String _sponsorName = '';
   String _userRole = '';
   String _bladerName = '';
+  String _userId = ''; // New field to store the userId
 
   @override
   void initState() {
@@ -28,30 +29,55 @@ class _SponsorHomePageState extends State<SponsorHomePage> {
     final user = _auth.currentUser;
     if (user != null) {
       try {
-        final sponsorSnapshot = await _firestore
-            .collection('sponsors')
-            .where('created_by', isEqualTo: user.uid)
-            .get();
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
 
-        if (sponsorSnapshot.docs.isNotEmpty) {
+        if (userDoc.exists) {
+          final userData = userDoc.data() as Map<String, dynamic>;
+          print('User Data: $userData'); // Debug print
+
           setState(() {
-            _sponsorName =
-                sponsorSnapshot.docs.first.get('agency_name') ?? 'Sponsor';
-            if (sponsorSnapshot.docs.first.data().containsKey('role')) {
-              _userRole = sponsorSnapshot.docs.first.get('role');
+            _bladerName = userData['blader_name'] ?? '';
+            _userRole = userData['role'] ?? '';
+            _userId = user.uid; // Store the userId
+
+            // Check if the user has a sponsor_id and load sponsor details if applicable
+            final sponsorId = userData['sponsor_id'];
+            if (sponsorId != null && sponsorId.isNotEmpty) {
+              _loadSponsorDetails(sponsorId);
             } else {
-              _userRole = '';
+              _sponsorName = 'Sponsor';
             }
           });
         } else {
           setState(() {
             _sponsorName = 'Sponsor';
             _userRole = '';
+            _bladerName = user.displayName ?? '';
           });
         }
       } catch (e) {
-        print('Error fetching sponsor information: $e');
+        print('Error fetching user information: $e');
       }
+    }
+  }
+
+  void _loadSponsorDetails(String sponsorId) async {
+    try {
+      final sponsorDoc =
+          await _firestore.collection('sponsors').doc(sponsorId).get();
+
+      if (sponsorDoc.exists) {
+        setState(() {
+          _sponsorName = sponsorDoc.get('sponsor_name') ?? 'Sponsor';
+        });
+      } else {
+        setState(() {
+          _sponsorName = 'Sponsor';
+        });
+      }
+    } catch (e) {
+      print('Error fetching sponsor information: $e');
     }
   }
 
@@ -73,6 +99,12 @@ class _SponsorHomePageState extends State<SponsorHomePage> {
         style: TextStyle(color: Colors.grey[300], fontSize: 24),
       ),
       actions: [
+        IconButton(
+          icon: Icon(Icons.notifications),
+          onPressed: () {
+            _navigateToNotifications(); // Navigate to notifications page
+          },
+        ),
         _buildUserDropdown(),
       ],
       flexibleSpace: Container(
@@ -88,35 +120,39 @@ class _SponsorHomePageState extends State<SponsorHomePage> {
   }
 
   Widget _buildBody() {
+    print('User Role: $_userRole'); // Add this line to debug
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/invitesponsorplayer');
-            },
-            child: Text('Invite Players', style: TextStyle(fontSize: 18)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+          if (_userRole == 'sponsors') ...[
+            ElevatedButton(
+              onPressed: () {
+                _navigateToInvitePlayers(); // Navigate to invite players page
+              },
+              child: Text('Invite Players', style: TextStyle(fontSize: 18)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
             ),
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/inviteclubs');
-            },
-            child: Text('Invite Club', style: TextStyle(fontSize: 18)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                _navigateToInviteClubs(); // Navigate to invite clubs page
+              },
+              child: Text('Invite Club', style: TextStyle(fontSize: 18)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -132,9 +168,9 @@ class _SponsorHomePageState extends State<SponsorHomePage> {
             if (newValue == 'Logout') {
               _signOut();
             } else if (newValue == 'My Profile') {
-              Navigator.pushNamed(context, '/profile');
+              _navigateToProfile();
             } else if (newValue == 'Sponsor Profile') {
-              Navigator.pushNamed(context, '/sponsorprofile');
+              _navigateToSponsorProfile();
             }
           },
           items: <String>[
@@ -203,7 +239,7 @@ class _SponsorHomePageState extends State<SponsorHomePage> {
             .pushNamed('/sponsorhome');
         break;
       case 1:
-        Navigator.pushNamed(context, '/profile');
+        _navigateToProfile();
         break;
       case 2:
         Navigator.pushNamed(context, '/rankings');
@@ -223,5 +259,25 @@ class _SponsorHomePageState extends State<SponsorHomePage> {
       context,
       MaterialPageRoute(builder: (context) => LoginPage()),
     );
+  }
+
+  void _navigateToInvitePlayers() {
+    Navigator.pushNamed(context, '/invitesponsorplayer', arguments: _userId);
+  }
+
+  void _navigateToInviteClubs() {
+    Navigator.pushNamed(context, '/inviteclubs', arguments: _userId);
+  }
+
+  void _navigateToNotifications() {
+    Navigator.pushNamed(context, '/inviteresponse', arguments: _userId);
+  }
+
+  void _navigateToProfile() {
+    Navigator.pushNamed(context, '/profile');
+  }
+
+  void _navigateToSponsorProfile() {
+    Navigator.pushNamed(context, '/sponsorprofile');
   }
 }
