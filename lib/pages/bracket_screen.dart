@@ -100,8 +100,6 @@ class _BracketScreenState extends State<BracketScreen> {
     String player1Score = '';
     String player2Score = '';
     int? winnerId = match['winner_id'];
-    String matchScore =
-        match['scores_csv'] ?? 'Not reported'; // Access scores_csv directly
 
     showDialog(
       context: context,
@@ -115,56 +113,44 @@ class _BracketScreenState extends State<BracketScreen> {
                 children: [
                   Text('Player 1: ${player1?['participant']['name'] ?? 'TBD'}'),
                   Text('Player 2: ${player2?['participant']['name'] ?? 'TBD'}'),
-
-                  // Display match score
-                  Text('Score: $matchScore'),
-
-                  // Show winner if available
-                  if (winnerId != null)
-                    Text(
-                        'Winner: ${getPlayer(winnerId)?['participant']['name'] ?? 'TBD'}'),
-
-                  // Input fields for reporting scores if winner is not yet determined
-                  if (winnerId == null) ...[
-                    TextField(
-                      decoration: InputDecoration(labelText: 'Player 1 Score'),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        player1Score = value;
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Player 1 Score'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      player1Score = value;
+                    },
+                  ),
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Player 2 Score'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      player2Score = value;
+                    },
+                  ),
+                  ListTile(
+                    title: Text('Player 1 wins'),
+                    leading: Radio<int>(
+                      value: match['player1_id'],
+                      groupValue: winnerId,
+                      onChanged: (int? value) {
+                        setDialogState(() {
+                          winnerId = value;
+                        });
                       },
                     ),
-                    TextField(
-                      decoration: InputDecoration(labelText: 'Player 2 Score'),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        player2Score = value;
+                  ),
+                  ListTile(
+                    title: Text('Player 2 wins'),
+                    leading: Radio<int>(
+                      value: match['player2_id'],
+                      groupValue: winnerId,
+                      onChanged: (int? value) {
+                        setDialogState(() {
+                          winnerId = value;
+                        });
                       },
                     ),
-                    ListTile(
-                      title: Text('Player 1 wins'),
-                      leading: Radio<int>(
-                        value: match['player1_id'],
-                        groupValue: winnerId,
-                        onChanged: (int? value) {
-                          setDialogState(() {
-                            winnerId = value;
-                          });
-                        },
-                      ),
-                    ),
-                    ListTile(
-                      title: Text('Player 2 wins'),
-                      leading: Radio<int>(
-                        value: match['player2_id'],
-                        groupValue: winnerId,
-                        onChanged: (int? value) {
-                          setDialogState(() {
-                            winnerId = value;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
+                  ),
                 ],
               ),
               actions: [
@@ -172,18 +158,17 @@ class _BracketScreenState extends State<BracketScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text('Close'),
                 ),
-                if (winnerId == null)
-                  TextButton(
-                    onPressed: () {
-                      final loserId = (winnerId == match['player1_id'])
-                          ? match['player2_id']
-                          : match['player1_id'];
-                      reportScore(match['id'], player1Score, player2Score,
-                          winnerId, loserId);
-                      Navigator.of(context).pop();
-                    },
-                    child: Text('Report Score'),
-                  ),
+                TextButton(
+                  onPressed: () {
+                    final loserId = (winnerId == match['player1_id'])
+                        ? match['player2_id']
+                        : match['player1_id'];
+                    reportScore(match['id'], player1Score, player2Score,
+                        winnerId, loserId);
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Report Score'),
+                ),
               ],
             );
           },
