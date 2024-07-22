@@ -95,10 +95,11 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
       automaticallyImplyLeading: false,
       title: Text(
         _agencyName,
-        style: TextStyle(color: Colors.grey[300], fontSize: 24),
+        style: TextStyle(color: Colors.white, fontSize: 24),
       ),
       actions: [
         IconButton(
+          color: Colors.lightBlue,
           icon: Icon(Icons.notifications),
           onPressed: () {
             _navigateToNotifications(); // Navigate to notifications page
@@ -162,7 +163,8 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
       return DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: 'Hello, $_bladerName',
-          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
+          icon: Icon(Icons.arrow_drop_down, color: Colors.grey[900]),
+          dropdownColor: Colors.grey[900],
           onChanged: (String? newValue) {
             if (newValue == 'Logout') {
               _signOut();
@@ -182,7 +184,7 @@ class _AgencyHomePageState extends State<AgencyHomePage> {
               value: value,
               child: Text(
                 value,
-                style: TextStyle(color: Colors.grey[500]),
+                style: TextStyle(color: Colors.grey[100]),
               ),
             );
           }).toList(),

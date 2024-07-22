@@ -49,6 +49,7 @@ import 'pages/create_sponsors_page.dart';
 import 'pages/sponsors_profile.dart';
 import 'pages/invite_sponsor_players.dart';
 import 'pages/inviter_responses_page.dart';
+import 'pages/invite_sponsor_club.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -131,6 +132,7 @@ class MyApp extends StatelessWidget {
               '/createagency': (context) => CreateAgencyDialog(),
               '/agencyprofile': (context) => AgencyProfilePage(),
               '/inviteplayers': (context) => InvitePlayersPage(),
+              '/invitesponorclubs': (context) => InviteSponsorClubLeadersPage(),
               '/inviteclubs': (context) => InviteClubLeadersPage(),
               '/mail': (context) => InvitationsPage(userId: userId ?? ''),
               '/inviteresponse': (context) =>
