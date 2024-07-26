@@ -108,7 +108,7 @@ class TournamentDetailsScreen extends StatelessWidget {
                       if (snapshot.hasError) {
                         return Center(child: Text('Error: ${snapshot.error}'));
                       }
-                      if (!snapshot.hasData || !snapshot.data!.docs.isEmpty) {
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                         return Center(
                             child: Text('No confirmed participants yet.'));
                       }
@@ -254,8 +254,8 @@ class TournamentDetailsScreen extends StatelessWidget {
           .get();
 
       participants = snapshot.docs
-          .map((doc) =>
-              doc['blader_name'] as String) // Explicitly cast to String
+          .map((doc) => doc.id.replaceFirst('${tournamentDoc.id}_',
+              '')) // Extract blader_name from document ID
           .toList();
     } catch (error) {
       print('Error fetching participants: $error');
@@ -263,35 +263,48 @@ class TournamentDetailsScreen extends StatelessWidget {
     return participants;
   }
 
-  Future<void> _endTournament(BuildContext context) async {
+  Future<void> _updateParticipantsInFirestore(BuildContext context) async {
     try {
-      // Fetch all participant details from Challonge
-      final participantDetails = await _fetchParticipantDetails();
+      final participants = await _fetchParticipantsFromChallonge();
 
-      // Save participant details to Firestore using tournament ID as the document ID
-      for (var participant in participantDetails) {
+      for (var participant in participants) {
+        final displayName = participant['display_name'];
+        final PID = participant['id'];
+        final participantId = '${tournamentDoc.id}_$displayName';
+
         await FirebaseFirestore.instance
             .collection('participants')
-            .doc('${tournamentDoc.id}_${participant['id']}')
-            .set(participant);
+            .doc(participantId)
+            .update({
+          'id': participantId,
+          'display_name': displayName,
+          'Pid': PID,
+          // Include other fields if necessary
+        }).catchError((error) {
+          print('Error updating document $participantId: $error');
+        });
       }
 
-      // Fetch all match details from Challonge
-      final matchDetails = await _fetchMatchDetails();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Participants updated successfully')),
+      );
+    } catch (e) {
+      print('Error updating participants: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating participants')),
+      );
+    }
+  }
 
-      // Save match details to Firestore using tournament ID as the document ID
-      for (var match in matchDetails) {
-        await FirebaseFirestore.instance
-            .collection('matches')
-            .doc(
-                '${tournamentDoc.id}_${match['id']}') // Use match ID as document ID
-            .set(match); // Save match details
-      }
+  Future<void> _endTournament(BuildContext context) async {
+    try {
+      // Update participants in Firestore
+      await _updateParticipantsInFirestore(context);
 
-      // Calculate and save participants' stats
+      // Fetch match details and record participant stats
       await _recordParticipantStats(context);
 
-      // Optionally, update tournament status in Firestore
+      // Update the tournament status to 'ended'
       await FirebaseFirestore.instance
           .collection('tournaments')
           .doc(tournamentDoc.id)
@@ -308,7 +321,7 @@ class TournamentDetailsScreen extends StatelessWidget {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchParticipantDetails() async {
+  Future<List<Map<String, dynamic>>> _fetchParticipantsFromChallonge() async {
     final response = await http.get(Uri.parse(
         'http://localhost:3000/tournament/${tournamentDoc.id}/participants'));
     if (response.statusCode == 200) {
@@ -317,7 +330,7 @@ class TournamentDetailsScreen extends StatelessWidget {
           .map((item) => item['participant'] as Map<String, dynamic>)
           .toList();
     } else {
-      throw Exception('Failed to load participant details');
+      throw Exception('Failed to load participants from Challonge');
     }
   }
 
@@ -337,8 +350,19 @@ class TournamentDetailsScreen extends StatelessWidget {
       // Fetch match details
       final matchDetails = await _fetchMatchDetails();
 
+      // Fetch all participant documents for the tournament
+      final participantsSnapshot = await FirebaseFirestore.instance
+          .collection('participants')
+          .where('tournament_id', isEqualTo: tournamentDoc.id)
+          .get();
+
+      final participantsMap = {
+        for (var doc in participantsSnapshot.docs)
+          doc['Pid']: doc.id // Map Pid to document ID
+      };
+
       // Create a map to track participant stats
-      final participantStats = <int, Map<String, dynamic>>{};
+      final participantStats = <String, Map<String, dynamic>>{};
 
       for (var match in matchDetails) {
         final player1Id = match['player1_id'] as int;
@@ -346,9 +370,13 @@ class TournamentDetailsScreen extends StatelessWidget {
         final winnerId = match['winner_id'] as int;
         final scoresCsv = match['scores_csv'] as String;
 
+        final player1DocId = participantsMap[player1Id];
+        final player2DocId = participantsMap[player2Id];
+
         // Initialize player stats if not already
-        if (!participantStats.containsKey(player1Id)) {
-          participantStats[player1Id] = {
+        if (player1DocId != null &&
+            !participantStats.containsKey(player1DocId)) {
+          participantStats[player1DocId] = {
             'id': player1Id,
             'wins': 0,
             'losses': 0,
@@ -356,8 +384,9 @@ class TournamentDetailsScreen extends StatelessWidget {
             'total_losses': 0
           };
         }
-        if (!participantStats.containsKey(player2Id)) {
-          participantStats[player2Id] = {
+        if (player2DocId != null &&
+            !participantStats.containsKey(player2DocId)) {
+          participantStats[player2DocId] = {
             'id': player2Id,
             'wins': 0,
             'losses': 0,
@@ -368,36 +397,54 @@ class TournamentDetailsScreen extends StatelessWidget {
 
         // Update stats based on match results
         if (winnerId == player1Id) {
-          participantStats[player1Id]!['wins'] =
-              (participantStats[player1Id]!['wins'] as int) + 1;
-          participantStats[player2Id]!['losses'] =
-              (participantStats[player2Id]!['losses'] as int) + 1;
+          if (player1DocId != null) {
+            participantStats[player1DocId]!['wins'] =
+                (participantStats[player1DocId]!['wins'] as int) + 1;
+          }
+          if (player2DocId != null) {
+            participantStats[player2DocId]!['losses'] =
+                (participantStats[player2DocId]!['losses'] as int) + 1;
+          }
         } else if (winnerId == player2Id) {
-          participantStats[player2Id]!['wins'] =
-              (participantStats[player2Id]!['wins'] as int) + 1;
-          participantStats[player1Id]!['losses'] =
-              (participantStats[player1Id]!['losses'] as int) + 1;
+          if (player2DocId != null) {
+            participantStats[player2DocId]!['wins'] =
+                (participantStats[player2DocId]!['wins'] as int) + 1;
+          }
+          if (player1DocId != null) {
+            participantStats[player1DocId]!['losses'] =
+                (participantStats[player1DocId]!['losses'] as int) + 1;
+          }
         }
 
         // Update total scores
         final scores = scoresCsv.split('-');
         if (scores.length == 2) {
-          participantStats[player1Id]!['total_scores'] =
-              (participantStats[player1Id]!['total_scores'] as int) +
-                  int.parse(scores[0]);
-          participantStats[player2Id]!['total_scores'] =
-              (participantStats[player2Id]!['total_scores'] as int) +
-                  int.parse(scores[1]);
+          if (player1DocId != null) {
+            participantStats[player1DocId]!['total_scores'] =
+                (participantStats[player1DocId]!['total_scores'] as int) +
+                    int.parse(scores[0]);
+          }
+          if (player2DocId != null) {
+            participantStats[player2DocId]!['total_scores'] =
+                (participantStats[player2DocId]!['total_scores'] as int) +
+                    int.parse(scores[1]);
+          }
         }
       }
 
       // Save participant stats to Firestore
-      for (var stats in participantStats.values) {
-        await FirebaseFirestore.instance
-            .collection('participants')
-            .doc('${tournamentDoc.id}_${stats['id']}')
-            .update(stats);
+      final batch = FirebaseFirestore.instance.batch();
+      for (var docId in participantStats.keys) {
+        final stats = participantStats[docId]!;
+        final docRef =
+            FirebaseFirestore.instance.collection('participants').doc(docId);
+        batch.update(docRef, stats);
       }
+      await batch.commit();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Participant stats recorded successfully')),
+      );
     } catch (e) {
       print('Error recording participant stats: $e');
       ScaffoldMessenger.of(context).showSnackBar(

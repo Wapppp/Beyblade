@@ -14,7 +14,46 @@ class _RankingPageState extends State<RankingPage> {
   @override
   void initState() {
     super.initState();
+    _updatePlayerStats(); // Update player stats before fetching top players
     _fetchTopPlayers();
+  }
+
+  Future<void> _updatePlayerStats() async {
+    try {
+      // Fetch all users
+      final QuerySnapshot usersSnapshot =
+          await _firestore.collection('users').get();
+
+      for (var userDoc in usersSnapshot.docs) {
+        String bladerName = userDoc['blader_name'];
+
+        // Fetch participant stats for the blader_name
+        final QuerySnapshot participantsSnapshot = await _firestore
+            .collection('participants')
+            .where('blader_name', isEqualTo: bladerName)
+            .get();
+
+        if (participantsSnapshot.docs.isNotEmpty) {
+          // Assuming there's only one participant document per blader_name
+          var participantDoc =
+              participantsSnapshot.docs.first.data() as Map<String, dynamic>;
+          var playerStats = {
+            'blader_name': bladerName,
+            'total_wins': participantDoc['wins'] ?? 0,
+            'total_losses': participantDoc['losses'] ?? 0,
+            'total_scores': participantDoc['total_scores'] ?? 0
+          };
+
+          // Create or update player stats document
+          await _firestore
+              .collection('playerstats')
+              .doc(bladerName)
+              .set(playerStats, SetOptions(merge: true));
+        }
+      }
+    } catch (e) {
+      print('Error updating player stats: $e');
+    }
   }
 
   Future<void> _fetchTopPlayers() async {
