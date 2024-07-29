@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class TournamentDetailsPage extends StatefulWidget {
   final TournamentEvent tournament;
@@ -26,6 +27,15 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
     if (currentUser != null) {
       _checkParticipantStatus();
       _checkOrganizerStatus();
+    }
+    _requestCameraPermission();
+  }
+
+  Future<void> _requestCameraPermission() async {
+    if (await Permission.camera.request().isGranted) {
+      print('Camera permission granted');
+    } else {
+      print('Camera permission denied');
     }
   }
 
@@ -160,8 +170,25 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
     }
 
     try {
-      // Assuming the QR code contains the tournament ID
-      String tournamentId = qrCode;
+      // Parse the QR code content
+      final lines = qrCode.split('\n');
+      if (lines.length != 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invalid QR code format')),
+        );
+        return;
+      }
+
+      final tournamentIdLabel = lines[0].split(':').last.trim();
+      final nameLabel = lines[1].split(':').last.trim();
+
+      // Check if the tournament ID matches
+      if (tournamentIdLabel != widget.tournament.id) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('QR code does not match this tournament')),
+        );
+        return;
+      }
 
       // Update participant status to confirmed
       await FirebaseFirestore.instance
@@ -259,67 +286,26 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
             child: Text('No participants yet.'),
           );
         }
-
-        final participants = snapshot.data!.docs.map((doc) {
-          String participantId = doc.id;
-          return Participant(
-            id: participantId,
-            userId: doc['user_id'],
-            bladerName: doc['blader_name'],
-            status: doc['status'], // Get the status of the participant
-          );
-        }).toList();
-
         return ListView.builder(
           shrinkWrap: true,
-          itemCount: participants.length,
+          itemCount: snapshot.data!.docs.length,
           itemBuilder: (context, index) {
-            final participant = participants[index];
+            DocumentSnapshot participantDoc = snapshot.data!.docs[index];
+            Participant participant = Participant(
+              id: participantDoc.id,
+              userId: participantDoc['user_id'],
+              bladerName: participantDoc['blader_name'],
+              status: participantDoc['status'], // Display the status
+            );
             return ListTile(
-              leading: FutureBuilder<DocumentSnapshot>(
-                future: _fetchProfileData(participant.userId),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircleAvatar(
-                      child: Text(participant.bladerName[0]),
-                    );
-                  } else if (snapshot.hasError ||
-                      !snapshot.hasData ||
-                      !snapshot.data!.exists) {
-                    return CircleAvatar(
-                      child: Text(participant.bladerName[0]),
-                    );
-                  } else {
-                    var profileData =
-                        snapshot.data!.data() as Map<String, dynamic>;
-                    return CircleAvatar(
-                      backgroundImage:
-                          NetworkImage(profileData['profile_picture'] ?? ''),
-                      child: Text(participant.bladerName[0]),
-                    );
-                  }
-                },
-              ),
               title: Text(participant.bladerName),
-              subtitle: Text(
-                  participant.status), // Display the status of the participant
+              subtitle:
+                  Text('Status: ${participant.status}'), // Display the status
             );
           },
         );
       },
     );
-  }
-
-  Future<DocumentSnapshot> _fetchProfileData(String userId) async {
-    try {
-      return await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-    } catch (e) {
-      print('Error fetching profile data: $e');
-      throw e;
-    }
   }
 
   String _formatTimestamp(Timestamp timestamp) {
@@ -339,12 +325,24 @@ class QRScannerPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Scan QR Code'),
       ),
-      body: MobileScanner(
-        onDetect: (barcode, args) {
-          final String code = barcode.rawValue ?? '';
-          onQRViewCreated(code);
-          Navigator.pop(context);
-        },
+      body: Center(
+        child: Container(
+          width: 300,
+          height: 300,
+          child: MobileScanner(
+            onDetect: (barcode, args) {
+              final String code = barcode.rawValue ?? '';
+              print('Detected QR code: $code');
+
+              if (code.isNotEmpty) {
+                onQRViewCreated(code);
+                Navigator.pop(context);
+              } else {
+                print('No QR code detected');
+              }
+            },
+          ),
+        ),
       ),
     );
   }
@@ -370,7 +368,7 @@ class Participant {
   final String id;
   final String userId;
   final String bladerName;
-  final String status; // Added status field
+  final String status;
 
   Participant({
     required this.id,
