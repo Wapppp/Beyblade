@@ -11,6 +11,113 @@ const port = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+app.get('/tournament/:tournamentId/rankings', async (req, res) => {
+  const { tournamentId } = req.params;
+
+  const fetchData = (path) => {
+    return new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'api.challonge.com',
+        port: 443,
+        path: path,
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+
+      const request = https.request(options, (response) => {
+        let data = '';
+
+        response.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        response.on('end', () => {
+          try {
+            const parsedData = JSON.parse(data);
+            resolve(parsedData);
+          } catch (error) {
+            reject(new Error('Error parsing JSON response'));
+          }
+        });
+      });
+
+      request.on('error', (error) => {
+        reject(new Error(`Request error: ${error.message}`));
+      });
+
+      request.end();
+    });
+  };
+
+  try {
+    const participantsPath = `/v1/tournaments/${tournamentId}/participants.json?api_key=aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa`;
+    const matchesPath = `/v1/tournaments/${tournamentId}/matches.json?api_key=aVlprOzueD1KvIkm7dRnuhxGaPFoeu8xRGIvPyPa`;
+
+    const [participantsData, matchesData] = await Promise.all([
+      fetchData(participantsPath),
+      fetchData(matchesPath),
+    ]);
+
+    const participants = participantsData.participants;
+    const matches = matchesData.matches;
+
+    if (!participants || !matches) {
+      throw new Error('Participants or matches data is missing');
+    }
+
+    // Initialize rankings data
+    const rankings = participants.map(p => ({
+      id: p.participant.id,
+      name: p.participant.name,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      points: 0, // Adjust this if you have a specific points system
+    }));
+
+    // Compute rankings based on match results
+    matches.forEach(match => {
+      if (match.match.state === 'complete') {
+        const player1 = rankings.find(r => r.id === match.match.player1_id);
+        const player2 = rankings.find(r => r.id === match.match.player2_id);
+        const scores = match.match.scores_csv.split('-').map(Number);
+
+        if (scores[0] > scores[1]) {
+          player1.wins += 1;
+          player2.losses += 1;
+          player1.points += 3; // 3 points for a win
+        } else if (scores[0] < scores[1]) {
+          player1.losses += 1;
+          player2.wins += 1;
+          player2.points += 3; // 3 points for a win
+        } else {
+          player1.draws += 1;
+          player2.draws += 1;
+          player1.points += 1; // 1 point for a draw
+          player2.points += 1;
+        }
+      }
+    });
+
+    // Sort participants by points (and other criteria if needed)
+    rankings.sort((a, b) => b.points - a.points);
+
+    // Send the rankings in a structured format
+    res.status(200).json({
+      status: 'success',
+      data: {
+        tournamentId,
+        rankings,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching ranking data:', error.message);
+    res.status(500).json({ error: 'Failed to fetch ranking data' });
+  }
+});
+
 app.post('/tournaments/:tournamentId/finalize', async (req, res) => {
   const { tournamentId } = req.params;
 

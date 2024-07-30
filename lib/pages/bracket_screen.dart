@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'ranking_screen_page.dart';
 
 const double _matchHeight = 120;
 const double _matchWidth = 240;
@@ -273,43 +274,72 @@ class _BracketScreenState extends State<BracketScreen> {
               icon: Icon(Icons.flag),
               onPressed: finalizeTournament,
             ),
+          IconButton(
+            icon: Icon(Icons.list),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      RankingScreen(tournamentId: widget.tournamentId),
+                ),
+              );
+            },
+          ),
         ],
       ),
       body: isLoadingData
           ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
+          : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              itemCount: maxRounds.length,
-              itemBuilder: (context, roundIndex) {
-                int currentRound = maxRounds[roundIndex];
-                List<dynamic> roundMatches = matches
-                    .where((match) => match['match']['round'] == currentRound)
-                    .toList();
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: roundMatches.map((matchData) {
-                    final match = matchData['match'];
-                    final player1 = getPlayer(match['player1_id']);
-                    final player2 = getPlayer(match['player2_id']);
-
-                    return Container(
-                      margin: EdgeInsets.only(
-                          right: _matchRightPadding, bottom: _minMargin),
-                      child: GestureDetector(
-                        onTap: () => showMatchDetails(context, match),
-                        child: matchBox(player1, player2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: maxRounds.map((round) {
+                  List<dynamic> roundMatches = matches
+                      .where((match) => match['match']['round'] == round)
+                      .toList();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Round $round',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    );
-                  }).toList(),
-                );
-              },
+                      Column(
+                        children: roundMatches.map((matchData) {
+                          final match = matchData['match'];
+                          final player1 = getPlayer(match['player1_id']);
+                          final player2 = getPlayer(match['player2_id']);
+                          final scores = match['scores_csv'] ?? '';
+
+                          return Container(
+                            margin: EdgeInsets.only(
+                              right: _matchRightPadding,
+                              bottom: _minMargin,
+                            ),
+                            child: GestureDetector(
+                              onTap: () => showMatchDetails(context, match),
+                              child: matchBox(player1, player2, scores),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
             ),
     );
   }
 
-  Widget matchBox(
-      Map<String, dynamic>? player1, Map<String, dynamic>? player2) {
+  Widget matchBox(Map<String, dynamic>? player1, Map<String, dynamic>? player2,
+      String scores) {
     return Container(
       height: _matchHeight,
       width: _matchWidth,
@@ -321,18 +351,38 @@ class _BracketScreenState extends State<BracketScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
-            child: Text(
-              player1 != null ? player1['participant']['name'] : 'TBD',
-              style: TextStyle(fontSize: 16.0),
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  player1 != null ? player1['participant']['name'] : 'TBD',
+                  style: TextStyle(fontSize: 16.0),
+                  textAlign: TextAlign.center,
+                ),
+                if (scores.isNotEmpty)
+                  Text(
+                    scores.split('-')[0],
+                    style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
+                  ),
+              ],
             ),
           ),
           Divider(color: Colors.black),
           Expanded(
-            child: Text(
-              player2 != null ? player2['participant']['name'] : 'TBD',
-              style: TextStyle(fontSize: 16.0),
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  player2 != null ? player2['participant']['name'] : 'TBD',
+                  style: TextStyle(fontSize: 16.0),
+                  textAlign: TextAlign.center,
+                ),
+                if (scores.isNotEmpty)
+                  Text(
+                    scores.split('-')[1],
+                    style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
+                  ),
+              ],
             ),
           ),
         ],

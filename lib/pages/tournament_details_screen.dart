@@ -356,10 +356,13 @@ class TournamentDetailsScreen extends StatelessWidget {
           .where('tournament_id', isEqualTo: tournamentDoc.id)
           .get();
 
-      final participantsMap = {
-        for (var doc in participantsSnapshot.docs)
-          doc['Pid']: doc.id // Map Pid to document ID
-      };
+      // Map Pid to document ID, handle missing Pid
+      final participantsMap = Map.fromIterable(participantsSnapshot.docs,
+          key: (doc) =>
+              doc.data().containsKey('Pid') ? doc.data()['Pid'] : null,
+          value: (doc) => doc.id)
+        ..removeWhere(
+            (key, value) => key == null); // Remove entries with null Pid
 
       // Create a map to track participant stats
       final participantStats = <String, Map<String, dynamic>>{};

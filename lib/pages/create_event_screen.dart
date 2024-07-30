@@ -198,7 +198,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   selectedType = newValue!;
                 });
               },
-              items: <String>['single elimination', 'double elimination']
+              items: <String>[
+                'single elimination',
+                'double elimination',
+                'swiss',
+                'round robin'
+              ]
                   .map<DropdownMenuItem<String>>(
                     (String value) => DropdownMenuItem<String>(
                       value: value,
