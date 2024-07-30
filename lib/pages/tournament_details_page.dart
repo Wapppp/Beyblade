@@ -253,7 +253,9 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
-            _buildParticipantsList(),
+            Expanded(
+              child: _buildParticipantsList(),
+            ),
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => Navigator.push(
@@ -287,7 +289,6 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
           );
         }
         return ListView.builder(
-          shrinkWrap: true,
           itemCount: snapshot.data!.docs.length,
           itemBuilder: (context, index) {
             DocumentSnapshot participantDoc = snapshot.data!.docs[index];

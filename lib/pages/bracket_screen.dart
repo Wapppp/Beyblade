@@ -109,50 +109,54 @@ class _BracketScreenState extends State<BracketScreen> {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: Text('Match Details'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Player 1: ${player1?['participant']['name'] ?? 'TBD'}'),
-                  Text('Player 2: ${player2?['participant']['name'] ?? 'TBD'}'),
-                  TextField(
-                    decoration: InputDecoration(labelText: 'Player 1 Score'),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      player1Score = value;
-                    },
-                  ),
-                  TextField(
-                    decoration: InputDecoration(labelText: 'Player 2 Score'),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      player2Score = value;
-                    },
-                  ),
-                  ListTile(
-                    title: Text('Player 1 wins'),
-                    leading: Radio<int>(
-                      value: match['player1_id'],
-                      groupValue: winnerId,
-                      onChanged: (int? value) {
-                        setDialogState(() {
-                          winnerId = value;
-                        });
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                        'Player 1: ${player1?['participant']['name'] ?? 'TBD'}'),
+                    Text(
+                        'Player 2: ${player2?['participant']['name'] ?? 'TBD'}'),
+                    TextField(
+                      decoration: InputDecoration(labelText: 'Player 1 Score'),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        player1Score = value;
                       },
                     ),
-                  ),
-                  ListTile(
-                    title: Text('Player 2 wins'),
-                    leading: Radio<int>(
-                      value: match['player2_id'],
-                      groupValue: winnerId,
-                      onChanged: (int? value) {
-                        setDialogState(() {
-                          winnerId = value;
-                        });
+                    TextField(
+                      decoration: InputDecoration(labelText: 'Player 2 Score'),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        player2Score = value;
                       },
                     ),
-                  ),
-                ],
+                    ListTile(
+                      title: Text('Player 1 wins'),
+                      leading: Radio<int>(
+                        value: match['player1_id'],
+                        groupValue: winnerId,
+                        onChanged: (int? value) {
+                          setDialogState(() {
+                            winnerId = value;
+                          });
+                        },
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('Player 2 wins'),
+                      leading: Radio<int>(
+                        value: match['player2_id'],
+                        groupValue: winnerId,
+                        onChanged: (int? value) {
+                          setDialogState(() {
+                            winnerId = value;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -292,47 +296,50 @@ class _BracketScreenState extends State<BracketScreen> {
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: maxRounds.map((round) {
-                  List<dynamic> roundMatches = matches
-                      .where((match) => match['match']['round'] == round)
-                      .toList();
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'Round $round',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: maxRounds.map((round) {
+                    List<dynamic> roundMatches = matches
+                        .where((match) => match['match']['round'] == round)
+                        .toList();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            'Round $round',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                      Column(
-                        children: roundMatches.map((matchData) {
-                          final match = matchData['match'];
-                          final player1 = getPlayer(match['player1_id']);
-                          final player2 = getPlayer(match['player2_id']);
-                          final scores = match['scores_csv'] ?? '';
+                        Column(
+                          children: roundMatches.map((matchData) {
+                            final match = matchData['match'];
+                            final player1 = getPlayer(match['player1_id']);
+                            final player2 = getPlayer(match['player2_id']);
+                            final scores = match['scores_csv'] ?? '';
 
-                          return Container(
-                            margin: EdgeInsets.only(
-                              right: _matchRightPadding,
-                              bottom: _minMargin,
-                            ),
-                            child: GestureDetector(
-                              onTap: () => showMatchDetails(context, match),
-                              child: matchBox(player1, player2, scores),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  );
-                }).toList(),
+                            return Container(
+                              margin: EdgeInsets.only(
+                                right: _matchRightPadding,
+                                bottom: _minMargin,
+                              ),
+                              child: GestureDetector(
+                                onTap: () => showMatchDetails(context, match),
+                                child: matchBox(player1, player2, scores),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
               ),
             ),
     );

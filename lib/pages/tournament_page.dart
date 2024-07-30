@@ -54,7 +54,8 @@ class TournamentsPage extends StatelessWidget {
             itemCount: tournaments.length,
             itemBuilder: (context, index) {
               final tournament = tournaments[index];
-              final status = _getTournamentStatus(tournament.event_date_time, now);
+              final status =
+                  _getTournamentStatus(tournament.event_date_time, now);
 
               return ListTile(
                 title: Text(tournament.name),
@@ -128,15 +129,21 @@ class TournamentsPage extends StatelessWidget {
     );
   }
 
-  TournamentStatus _getTournamentStatus(Timestamp tournamentDate, DateTime now) {
+  TournamentStatus _getTournamentStatus(
+      Timestamp tournamentDate, DateTime now) {
     DateTime dateTime = tournamentDate.toDate();
+
+    // Check if the date is the same day as today
+    bool isSameDay = now.year == dateTime.year &&
+        now.month == dateTime.month &&
+        now.day == dateTime.day;
 
     if (now.isBefore(dateTime)) {
       return TournamentStatus.Upcoming;
-    } else if (now.isAfter(dateTime)) {
-      return TournamentStatus.Ended;
-    } else {
+    } else if (now.isAfter(dateTime) || isSameDay) {
       return TournamentStatus.Ongoing;
+    } else {
+      return TournamentStatus.Ended;
     }
   }
 }
